@@ -1,0 +1,6 @@
+.DS_Store
+.vscode
+.dir-locals.el
+TAGS
+/debug_dist/
+

@@ -1,0 +1,8 @@
+hash: bb83fe603569fb8635aa416e63c4d767e1fe8ab3802749cbbb1938348f931a55
+updated: 2016-11-22T22:44:22.781816952+09:00
+imports:
+- name: github.com/jessevdk/go-flags
+  version: 8bc97d602c3bfeb5fc6fc9b5a9c898f245495637
+- name: github.com/koron/go-dproxy
+  version: 009e1192eaace40a885c5b93c37613b3cae820d6
+testImports: []
