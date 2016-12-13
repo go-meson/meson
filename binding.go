@@ -3,14 +3,11 @@ package meson
 /*
 #cgo CFLAGS:	-mmacosx-version-min=10.9
 #cgo CFLAGS:	-DMESON_DIR=${SRCDIR}
-#cgo debug CFLAGS: -Idebug_dist/include
-#cgo !debug CFLAGS: -Idist/include
-#cgo debug LDFLAGS: -F${SRCDIR}/debug_dist
-#cgo !debug LDFLAGS: -F${SRCDIR}/dist
+#cgo CFLAGS: -Idist/include
+#cgo LDFLAGS: -F${SRCDIR}/dist
 #cgo LDFLAGS: -framework Meson
 #cgo LDFLAGS: -Wl,-rpath,@executable_path/../Frameworks
-#cgo debug LDFLAGS: -Wl,-rpath,${SRCDIR}/debug_dist
-#cgo !debug LDFLAGS: -Wl,-rpath,${SRCDIR}/dist
+#cgo LDFLAGS: -Wl,-rpath,${SRCDIR}/dist
 #cgo LDFLAGS: -mmacosx-version-min=10.9
 
 #include <stdlib.h>

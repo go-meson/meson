@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/yossoy/go-meson/meson"
+	"github.com/go-meson/meson"
 )
 
 var (

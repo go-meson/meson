@@ -88,10 +88,10 @@ func copyTree(dst, src string) error {
 }
 
 func makeMesonDirs() []string {
-	cmd := exec.Command("go", "list", "-f", "{{.Dir}}", "github.com/yossoy/go-meson/meson")
+	cmd := exec.Command("go", "list", "-f", "{{.Dir}}", "github.com/go-meson/meson")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("go list github.com/yossoy/go-meson/meson failed:\n%s\n\n", string(out))
+		fmt.Printf("go list github.com/go-meson/meson failed:\n%s\n\n", string(out))
 		os.Exit(1)
 	}
 
@@ -147,9 +147,7 @@ func main() {
 	must(os.MkdirAll(filepath.Dir(fwDst), 0777))
 
 	for _, dir := range dirs {
-		fmt.Println(dir)
 		dst := filepath.Join(fwDst, filepath.Base(dir))
-		fmt.Println(dst)
 		must(os.MkdirAll(filepath.Dir(dst), 0777))
 		must(copyTree(dst, dir))
 	}
