@@ -97,6 +97,27 @@ func (w *Window) Close() {
 	postMessage(&cmd)
 }
 
+func (w *Window) OpenDevTool() {
+	// TODO: options??
+	cmd := makeCallCommand(objWindow, w.id, "openDevTools")
+	postMessage(&cmd)
+}
+
+func (w *Window) CloseDevTool() {
+	cmd := makeCallCommand(objWindow, w.id, "closeDevTools")
+	postMessage(&cmd)
+}
+
+func (w *Window) IsDevToolOpened() bool {
+	cmd := makeCallCommand(objWindow, w.id, "isDevToolsOpened")
+	r, err := sendMessage(&cmd)
+	if err != nil {
+		return false
+	}
+	b, _ := dproxy.New(r).Bool()
+	return b
+}
+
 //------------------------------------------------------------------------
 // Callbacks
 

@@ -2,5 +2,5 @@
 .vscode
 .dir-locals.el
 TAGS
-/debug_dist/
+/dist/
 

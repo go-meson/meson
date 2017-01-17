@@ -9,10 +9,12 @@ package meson
 #cgo LDFLAGS: -Wl,-rpath,@executable_path/../Frameworks
 #cgo LDFLAGS: -Wl,-rpath,${SRCDIR}/dist
 #cgo LDFLAGS: -mmacosx-version-min=10.9
+#cgo LDFLAGS: -framework Foundation -framework AppKit
 
 #include <stdlib.h>
 #include "meson.h"
 extern void mesonRegistHandler(void);
+extern char* mesonGetBundlePath(void);
 */
 import "C"
 import "encoding/json"
@@ -164,6 +166,11 @@ func goPostServerResponse(cid C.uint, crespstr *C.char, needReply C.int) *C.char
 		resultstr = C.CString(string(r))
 	}
 	return resultstr
+}
+
+func TestInMainBundle() string {
+	r := C.mesonGetBundlePath()
+	return C.GoString(r)
 }
 
 func runMesonMainLoop(args []string) int {

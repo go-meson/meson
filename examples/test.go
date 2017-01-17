@@ -13,7 +13,17 @@ var (
 
 func onClick(mi *meson.MenuItemTemplate, w *meson.Window) {
 	log.Printf("clicked: %#v\n", mi)
-	meson.ShowMessageBox(nil, "This is Menu callback", "Test", meson.MessageBoxTypeInfo, nil)
+	str := "This app is running in bundle : " + meson.TestInMainBundle()
+	meson.ShowMessageBox(w, str, "Test", meson.MessageBoxTypeInfo, nil)
+}
+
+func onOpenDevTool(mi *meson.MenuItemTemplate, w *meson.Window) {
+	log.Printf("opendev: %#v, %#v", mi, w)
+	if w.IsDevToolOpened() {
+		w.CloseDevTool()
+	} else {
+		w.OpenDevTool()
+	}
 }
 
 var menu = meson.MenuTemplate{
@@ -22,7 +32,7 @@ var menu = meson.MenuTemplate{
 		{Label: "Test1-2"},
 		{Label: "Quit", Role: "quit"}}},
 	{Label: "Test22222", SubMenu: meson.MenuTemplate{
-		{Label: "Test2-1"},
+		{Label: "openDevTool", Click: onOpenDevTool},
 		{Label: "Test2-2"}}},
 }
 
@@ -31,8 +41,10 @@ type WinUserData struct {
 }
 
 func main() {
+	log.Printf("bundlePath=%s\n", meson.TestInMainBundle())
 	meson.MainLoop(os.Args, func(app *meson.App) {
 		//meson.ShowMessageBox(nil, "This is Menu callback", "Test", meson.MessageBoxTypeInfo, nil)
+
 		m, err := meson.NewMenuWithTemplate(menu)
 		log.Printf("menu: %#v, err: %#v\n", m, err)
 		if err != nil {
@@ -56,6 +68,7 @@ func main() {
 			log.Printf("Create window fail: %q", err)
 			return
 		}
+		//win.OpenDevTool()
 		win.UserData = &WinUserData{}
 		log.Printf("win = %#v\n", win)
 		win.OnWindowClose(func(sender meson.ObjectRef) bool {
@@ -74,7 +87,8 @@ func main() {
 			})
 			return true
 		})
-		win.LoadURL("http://www.google.co.jp")
+		//win.LoadURL("http://www.google.co.jp")
+		win.LoadURL("file:////Users/yoshikawa/.go/src/github.com/go-meson/meson/test.html")
 		/*
 			if err != nil {
 				log.Printf("LoadURL fail: %q", err)

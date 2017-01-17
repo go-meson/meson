@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/koron/go-dproxy"
+	"log"
 )
 
 type MenuRole struct {
@@ -82,18 +83,20 @@ var menuRoleMap = map[string]MenuRole{
 	"zoomout":            MenuRole{Label: "Zoom Out", Accelerator: "CommandOrControl+-", WebContentsMethod: "_MenuZoomOut"},
 }
 
+type MenuItemClickHandler func(*MenuItemTemplate, *Window)
+
 type MenuItemTemplate struct {
-	Type        MenuType                         `json:"type"`
-	Role        string                           `json:"role,omitempty"`
-	Label       string                           `json:"label,omitempty"`
-	SubLabel    string                           `json:"sublabel,omitempty"`
-	Accelerator string                           `json:"accelerator,omitempty"`
-	ID          int                              `json:"id"`
-	Disabled    bool                             `json:"disabled"`
-	Invisible   bool                             `json:"invisible"`
-	Checked     bool                             `json:"checked"`
-	SubMenu     MenuTemplate                     `json:"-"`
-	Click       func(*MenuItemTemplate, *Window) `json:"-"`
+	Type        MenuType             `json:"type"`
+	Role        string               `json:"role,omitempty"`
+	Label       string               `json:"label,omitempty"`
+	SubLabel    string               `json:"sublabel,omitempty"`
+	Accelerator string               `json:"accelerator,omitempty"`
+	ID          int                  `json:"id"`
+	Disabled    bool                 `json:"disabled"`
+	Invisible   bool                 `json:"invisible"`
+	Checked     bool                 `json:"checked"`
+	SubMenu     MenuTemplate         `json:"-"`
+	Click       MenuItemClickHandler `json:"-"`
 	//Icon        image.Image // TODO: handle native image?
 	// hidden properties
 	windowMethod      string
@@ -122,13 +125,6 @@ func newMenuItemTemplateWrapper(mi *MenuItemTemplate) *menuItemTemplateWrapper {
 		SubMenuID:         mi.subMenuID,
 	}
 }
-
-/*
-func (mi MenuItemTemplate) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct {
-	}{})
-}
-*/
 
 func (mi *MenuItemTemplate) fixMenuType() error {
 	if len(mi.SubMenu) > 0 {
@@ -191,6 +187,24 @@ func (m *MenuTemplate) apply(f func(*MenuItemTemplate) error) error {
 	return nil
 }
 */
+
+type menuItemClickItem struct {
+	mi *MenuItemTemplate
+}
+
+func (p menuItemClickItem) Call(o ObjectRef, arg interface{}) (bool, error) {
+	args, ok := arg.([]interface{})
+	if !ok || len(args) != 1 {
+		log.Panic("Invalid arg type: %%v", arg)
+	}
+	id, err := dproxy.New(args[0]).Int64()
+	if err != nil {
+		return false, err
+	}
+	win := getObject(id).(*Window)
+	p.mi.Click(p.mi, win)
+	return false, nil
+}
 
 type menuCallback map[int]func()
 
@@ -304,10 +318,7 @@ func (m *Menu) LoadTemplate(template MenuTemplate) error {
 		eventID := tempEvents[idx].id
 		eventName := tempEvents[idx].name
 		mi.eventName = eventName
-		click := mi.Click
-		m.addRegisterdCallback(eventID, commonCallbackItem{f: func(obj ObjectRef) {
-			click(mi, nil)
-		}})
+		m.addRegisterdCallback(eventID, menuItemClickItem{mi: mi})
 	}
 
 	items := make([]interface{}, len(template))
