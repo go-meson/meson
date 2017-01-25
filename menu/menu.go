@@ -1,8 +1,14 @@
-package meson
+package menu
 
 import (
 	"errors"
 	"fmt"
+	"github.com/go-meson/meson/internal/binding"
+	"github.com/go-meson/meson/internal/command"
+	"github.com/go-meson/meson/internal/event"
+	"github.com/go-meson/meson/internal/object"
+	obj "github.com/go-meson/meson/object"
+	"github.com/go-meson/meson/window"
 	"github.com/koron/go-dproxy"
 	"log"
 )
@@ -83,7 +89,9 @@ var menuRoleMap = map[string]MenuRole{
 	"zoomout":            MenuRole{Label: "Zoom Out", Accelerator: "CommandOrControl+-", WebContentsMethod: "_MenuZoomOut"},
 }
 
-type MenuItemClickHandler func(*MenuItemTemplate, *Window)
+type MenuItemClickHandler func(*MenuItemTemplate, *window.Window)
+
+type MenuType binding.MenuType
 
 type MenuItemTemplate struct {
 	Type        MenuType             `json:"type"`
@@ -115,6 +123,14 @@ type menuItemTemplateWrapper struct {
 	SubMenuID         int64  `json:"subMenuId"`
 }
 
+const (
+	MenuTypeNormal    MenuType = MenuType(binding.MenuTypeNormal)
+	MenuTypeSeparator          = MenuType(binding.MenuTypeSeparator)
+	MenuTypeSubmenu            = MenuType(binding.MenuTypeSubmenu)
+	MenuTypeCheckBox           = MenuType(binding.MenuTypeCheckBox)
+	MenuTypeRadio              = MenuType(binding.MenuTypeRadio)
+)
+
 func newMenuItemTemplateWrapper(mi *MenuItemTemplate) *menuItemTemplateWrapper {
 	return &menuItemTemplateWrapper{
 		MenuItemTemplate:  *mi,
@@ -128,7 +144,7 @@ func newMenuItemTemplateWrapper(mi *MenuItemTemplate) *menuItemTemplateWrapper {
 
 func (mi *MenuItemTemplate) fixMenuType() error {
 	if len(mi.SubMenu) > 0 {
-		mi.Type = MenuTypeSubmenu
+		mi.Type = binding.MenuTypeSubmenu
 	} else if mi.Type == MenuTypeSubmenu {
 		return fmt.Errorf("MenuTemplate type is MenuTypeSubmenu, but not have SubMenu.")
 	}
@@ -192,16 +208,16 @@ type menuItemClickItem struct {
 	mi *MenuItemTemplate
 }
 
-func (p menuItemClickItem) Call(o ObjectRef, arg interface{}) (bool, error) {
+func (p menuItemClickItem) Call(o obj.ObjectRef, arg interface{}) (bool, error) {
 	args, ok := arg.([]interface{})
 	if !ok || len(args) != 1 {
-		log.Panic("Invalid arg type: %%v", arg)
+		log.Panicf("Invalid arg type: %#v", arg)
 	}
 	id, err := dproxy.New(args[0]).Int64()
 	if err != nil {
 		return false, err
 	}
-	win := getObject(id).(*Window)
+	win := object.GetObject(id).(*window.Window)
 	p.mi.Click(p.mi, win)
 	return false, nil
 }
@@ -250,22 +266,22 @@ func (m *MenuTemplate) fillMenuID(idMap map[int]*MenuItemTemplate) {
 }
 
 type Menu struct {
-	object
+	object.Object
 }
 
 func newMenu(id int64) *Menu {
-	menu := &Menu{object: newObject(id, objMenu)}
-	addObject(id, menu)
+	menu := &Menu{Object: object.NewObject(id, binding.ObjMenu)}
+	object.AddObject(id, menu)
 	return menu
 }
 
 func NewMenuWithTemplate(template MenuTemplate) (*Menu, error) {
-	if !apiReady {
+	if !command.APIReady {
 		return nil, errors.New("meson api is not ready yet")
 	}
-	cmd := makeCreateCommand(objMenu)
+	cmd := command.MakeCreateCommand(binding.ObjMenu)
 
-	resp, err := sendMessage(&cmd)
+	resp, err := command.SendMessage(&cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -303,11 +319,11 @@ func (m *Menu) LoadTemplate(template MenuTemplate) error {
 			if err != nil {
 				return err
 			}
-			mi.subMenuID = sm.id
+			mi.subMenuID = sm.Id
 		}
 	}
 
-	tempEvents, err := m.makeTemporaryEvents(len(ids))
+	tempEvents, err := event.MakeTemporaryEvents(&m.Object, len(ids))
 	if err != nil {
 		return nil
 	}
@@ -315,18 +331,18 @@ func (m *Menu) LoadTemplate(template MenuTemplate) error {
 	for idx := 0; idx < len(ids); idx++ {
 		id := ids[idx]
 		mi := idMap[id]
-		eventID := tempEvents[idx].id
-		eventName := tempEvents[idx].name
+		eventID := tempEvents[idx].Id
+		eventName := tempEvents[idx].Name
 		mi.eventName = eventName
-		m.addRegisterdCallback(eventID, menuItemClickItem{mi: mi})
+		m.AddRegisterdCallback(eventID, menuItemClickItem{mi: mi})
 	}
 
 	items := make([]interface{}, len(template))
 	for i, t := range template {
 		items[i] = newMenuItemTemplateWrapper(&t)
 	}
-	cmd := makeCallCommand(m.objType, m.id, "loadTemplate", items...)
-	_, err = sendMessage(&cmd)
+	cmd := command.MakeCallCommand(m.ObjType, m.Id, "loadTemplate", items...)
+	_, err = command.SendMessage(&cmd)
 	if err != nil {
 		return err
 	}

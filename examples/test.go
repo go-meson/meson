@@ -5,19 +5,26 @@ import (
 	"os"
 
 	"github.com/go-meson/meson"
+	"github.com/go-meson/meson/app"
+	"github.com/go-meson/meson/dialog"
+	"github.com/go-meson/meson/logger"
+	"github.com/go-meson/meson/menu"
+	"github.com/go-meson/meson/object"
+	"github.com/go-meson/meson/util"
+	"github.com/go-meson/meson/window"
 )
 
 var (
 	counter = 0
 )
 
-func onClick(mi *meson.MenuItemTemplate, w *meson.Window) {
+func onClick(mi *menu.MenuItemTemplate, w *window.Window) {
 	log.Printf("clicked: %#v\n", mi)
-	str := "This app is running in bundle : " + meson.TestInMainBundle()
-	meson.ShowMessageBox(w, str, "Test", meson.MessageBoxTypeInfo, nil)
+	str := "This app is running in bundle : "
+	dialog.ShowMessageBox(w, str, "Test", dialog.MessageBoxTypeInfo, nil)
 }
 
-func onOpenDevTool(mi *meson.MenuItemTemplate, w *meson.Window) {
+func onOpenDevTool(mi *menu.MenuItemTemplate, w *window.Window) {
 	log.Printf("opendev: %#v, %#v", mi, w)
 	if w.IsDevToolOpened() {
 		w.CloseDevTool()
@@ -26,12 +33,12 @@ func onOpenDevTool(mi *meson.MenuItemTemplate, w *meson.Window) {
 	}
 }
 
-var menu = meson.MenuTemplate{
-	{Label: "Test1111111", SubMenu: meson.MenuTemplate{
+var mainMenu = menu.MenuTemplate{
+	{Label: "Test1111111", SubMenu: menu.MenuTemplate{
 		{Label: "Test1-1", Click: onClick},
 		{Label: "Test1-2"},
 		{Label: "Quit", Role: "quit"}}},
-	{Label: "Test22222", SubMenu: meson.MenuTemplate{
+	{Label: "Test22222", SubMenu: menu.MenuTemplate{
 		{Label: "openDevTool", Click: onOpenDevTool},
 		{Label: "Test2-2"}}},
 }
@@ -41,29 +48,35 @@ type WinUserData struct {
 }
 
 func main() {
-	log.Printf("bundlePath=%s\n", meson.TestInMainBundle())
-	meson.MainLoop(os.Args, func(app *meson.App) {
+	if err := logger.SetFileLogger("/Users/yoshikawa/.go/src/github.com/go-meson/meson/test.log"); err != nil {
+		log.Fatal(err)
+		return
+	}
+	logger.RedirectStdout()
+	logger.RedirectStderr()
+	log.Printf("bundlePath = %s\n", util.GetApplicationBundlePath())
+	meson.MainLoop(os.Args, func(a *app.App) {
 		//meson.ShowMessageBox(nil, "This is Menu callback", "Test", meson.MessageBoxTypeInfo, nil)
 
-		m, err := meson.NewMenuWithTemplate(menu)
+		m, err := menu.NewMenuWithTemplate(mainMenu)
 		log.Printf("menu: %#v, err: %#v\n", m, err)
 		if err != nil {
 			log.Fatal(err)
-			meson.Exit(-1)
+			app.Exit(-1)
 		}
-		app.SetApplicationMenu(m)
+		a.SetApplicationMenu(m)
 
-		app.OnWindowCloseAll(func(sender meson.ObjectRef) {
+		a.OnWindowCloseAll(func(sender object.ObjectRef) {
 			log.Println("**** WindowCloseAll ***")
-			if app := sender.(*meson.App); app != nil {
-				meson.Exit(0)
+			if a := sender.(*app.App); a != nil {
+				app.Exit(0)
 			}
 		})
 		log.Println("Called Init Handler!")
-		opt := meson.FramedWindowOptions
+		opt := window.FramedWindowOptions
 		opt.Shape.Width = 320
 		opt.Shape.Height = 240
-		win, err := meson.NewBrowserWindow(&opt)
+		win, err := window.NewBrowserWindow(&opt)
 		if err != nil {
 			log.Printf("Create window fail: %q", err)
 			return
@@ -71,12 +84,12 @@ func main() {
 		//win.OpenDevTool()
 		win.UserData = &WinUserData{}
 		log.Printf("win = %#v\n", win)
-		win.OnWindowClose(func(sender meson.ObjectRef) bool {
+		win.OnWindowClose(func(sender object.ObjectRef) bool {
 			ud := win.UserData.(*WinUserData)
 			if ud.doClosing {
 				return false
 			}
-			meson.ShowMessageBoxAsync(win, "really quit?", "Quit?", meson.MessageBoxTypeQuestion, nil, func(buttonId int, err error) {
+			dialog.ShowMessageBoxAsync(win, "really quit?", "Quit?", dialog.MessageBoxTypeQuestion, nil, func(buttonId int, err error) {
 				if err != nil {
 					log.Panicf("err!: %#v", err)
 				}

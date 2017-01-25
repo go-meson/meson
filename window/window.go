@@ -1,7 +1,12 @@
-package meson
+package window
 
 import (
 	"errors"
+	evt "github.com/go-meson/meson/event"
+	"github.com/go-meson/meson/internal/binding"
+	"github.com/go-meson/meson/internal/command"
+	"github.com/go-meson/meson/internal/event"
+	"github.com/go-meson/meson/internal/object"
 	"github.com/koron/go-dproxy"
 )
 
@@ -14,12 +19,12 @@ type Rect struct {
 }
 
 type Window struct {
-	object
+	object.Object
 }
 
 func newWindow(id int64) *Window {
-	win := &Window{object: newObject(id, objWindow)}
-	addObject(id, win)
+	win := &Window{Object: object.NewObject(id, binding.ObjWindow)}
+	object.AddObject(id, win)
 	// register default handler
 	return win
 }
@@ -53,12 +58,12 @@ var FramedWindowOptions = WindowOptions{
 
 // NewBrowserWindow Create and control browser windows.
 func NewBrowserWindow(opt *WindowOptions) (*Window, error) {
-	if !apiReady {
+	if !command.APIReady {
 		return nil, errors.New("meson api is not ready yet")
 	}
-	cmd := makeCreateCommand(objWindow, opt)
+	cmd := command.MakeCreateCommand(binding.ObjWindow, opt)
 
-	response, err := sendMessage(&cmd)
+	response, err := command.SendMessage(&cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -79,38 +84,35 @@ type LoadURLOptions struct {
 }
 
 //LoadURL is same as WebContents.LoadURL
-func (w *Window) LoadURL(url string) {
-	cmd := makeCallCommand(w.objType, w.id, "loadURL", url)
-	postMessage(&cmd)
-	//_, err := sendMessage(&cmd)
-	//return err
+func (w *Window) LoadURL(url string) error {
+	cmd := command.MakeCallCommand(w.ObjType, w.Id, "loadURL", url)
+	return command.PostMessage(&cmd)
 }
 
 func (w *Window) LoadURLWithOptions(url string, opt *LoadURLOptions) error {
-	cmd := makeCallCommand(objWindow, w.id, "loadURL", url, opt)
-	_, err := sendMessage(&cmd)
-	return err
+	cmd := command.MakeCallCommand(w.ObjType, w.Id, "loadURL", opt)
+	return command.PostMessage(&cmd)
 }
 
 func (w *Window) Close() {
-	cmd := makeCallCommand(objWindow, w.id, "close")
-	postMessage(&cmd)
+	cmd := command.MakeCallCommand(w.ObjType, w.Id, "close")
+	command.PostMessage(&cmd)
 }
 
 func (w *Window) OpenDevTool() {
 	// TODO: options??
-	cmd := makeCallCommand(objWindow, w.id, "openDevTools")
-	postMessage(&cmd)
+	cmd := command.MakeCallCommand(w.ObjType, w.Id, "OpenDevTools")
+	command.PostMessage(&cmd)
 }
 
 func (w *Window) CloseDevTool() {
-	cmd := makeCallCommand(objWindow, w.id, "closeDevTools")
-	postMessage(&cmd)
+	cmd := command.MakeCallCommand(w.ObjType, w.Id, "closeDevTools")
+	command.PostMessage(&cmd)
 }
 
 func (w *Window) IsDevToolOpened() bool {
-	cmd := makeCallCommand(objWindow, w.id, "isDevToolsOpened")
-	r, err := sendMessage(&cmd)
+	cmd := command.MakeCallCommand(w.ObjType, w.Id, "isDevToolsOpened")
+	r, err := command.SendMessage(&cmd)
 	if err != nil {
 		return false
 	}
@@ -121,7 +123,7 @@ func (w *Window) IsDevToolOpened() bool {
 //------------------------------------------------------------------------
 // Callbacks
 
-func (w *Window) OnWindowClose(callback CommonPreventableCallbackHandler) {
+func (w *Window) OnWindowClose(callback evt.CommonPreventableCallbackHandler) {
 	const en = "close"
-	w.addCallback(en, commonPreventableCallbackItem{f: callback})
+	event.AddCallback(&w.Object, en, event.CommonPreventableCallbackItem{F: callback})
 }

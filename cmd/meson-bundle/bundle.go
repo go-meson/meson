@@ -3,11 +3,12 @@
 package main
 
 import (
+	"debug/macho"
 	"fmt"
+	"github.com/go-meson/meson/provision"
 	flags "github.com/jessevdk/go-flags"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -87,24 +88,46 @@ func copyTree(dst, src string) error {
 	})
 }
 
-func makeMesonDirs() []string {
-	cmd := exec.Command("go", "list", "-f", "{{.Dir}}", "github.com/go-meson/meson")
-	out, err := cmd.CombinedOutput()
+func detectVersionMarchO(exe string) (string, error) {
+	file, err := macho.Open(exe)
 	if err != nil {
-		fmt.Printf("go list github.com/go-meson/meson failed:\n%s\n\n", string(out))
-		os.Exit(1)
+		return "", err
+	}
+	defer file.Close()
+	sec := file.Section("__meson_version")
+	if sec == nil {
+		return "", fmt.Errorf("cannot find __meson_version segment")
+	}
+	vers, err := sec.Data()
+	if err != nil {
+		return "", err
+	}
+	if len(vers) != 3 {
+		return "", fmt.Errorf("invalid __meson_version segment length: %d", len(vers))
+	}
+	return fmt.Sprintf("v%d.%d.%d", vers[0], vers[1], vers[2]), nil
+}
+
+func detectFrameworkVersion(exe string) (string, error) {
+	// mach-o
+	if ver, err := detectVersionMarchO(exe); err == nil {
+		return ver, nil
 	}
 
+	//TODO: elf
+	//TODO: pe
+	return "", fmt.Errorf("cannot detect meson framework version: %q", exe)
+}
+
+func makeMesonDirs(basePath string) []string {
 	mesonFiles := []string{
 		"Meson.framework",
-		//"Meson Helper EH.app",
 		"Meson Helper.app",
-		//"Meson Helper NP.app",
 	}
-	basedir := strings.TrimSpace(string(out))
+
 	dirs := make([]string, len(mesonFiles))
 	for i, file := range mesonFiles {
-		fw := filepath.Join(basedir, "dist", file)
+		fw := filepath.Join(basePath, file)
 		st, err := os.Stat(fw)
 		if err != nil {
 			fmt.Printf("framework not found at %s: %v\n", fw, err)
@@ -134,11 +157,25 @@ func main() {
 	if opts.BundleIdentifier == "" {
 		opts.BundleIdentifier = bundleName
 	}
+	var frameworkVersion string
+	var err error
+	frameworkVersion, err = detectVersionMarchO(opts.executable)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = provision.FetchFramework(frameworkVersion)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	frameworkBasePath := provision.FrameworkBasePath(frameworkVersion)
 
 	// extras for the Info.plist
 	extraProps := make(map[string]string)
 
-	dirs := makeMesonDirs()
+	dirs := makeMesonDirs(frameworkBasePath)
 
 	tmpBundle, err := ioutil.TempDir("", "")
 	must(err)

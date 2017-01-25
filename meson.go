@@ -1,52 +1,38 @@
 package meson
 
-import "sync/atomic"
-import "errors"
-
 import "runtime"
 import "time"
 import "log"
+import "github.com/go-meson/meson/app"
+import "github.com/go-meson/meson/internal/binding"
+import "github.com/go-meson/meson/internal/object"
+import "github.com/go-meson/meson/internal/command"
 
 func init() {
 	runtime.LockOSThread()
 }
 
-var commandID int64
-var apiReady = false
-
-func sendMessageAsync(cmd *command, handler respHandler) {
-	actionID := atomic.AddInt64(&commandID, 1)
-	sendMessageInternal(cmd, actionID, handler)
+func newApp() *app.App {
+	app := &app.App{Object: object.NewObject(binding.ObjAppID, binding.ObjApp)}
+	object.AddObject(binding.ObjAppID, app)
+	return app
 }
 
-func sendMessage(cmd *command) (interface{}, error) {
-	if !tryEnterSendMessage() {
-		return nil, errors.New("invalid context")
+func MainLoop(args []string, onInit func(*app.App)) int {
+	err := binding.LoadBinding()
+	if err != nil {
+		log.Fatal(err)
+		return -1
 	}
-	defer leaveSendMessage()
-	actionID := atomic.AddInt64(&commandID, 1)
-	ch := getRespChan()
-	sendMessageInternal(cmd, actionID, func(r *response) {
-		ch <- r
-	})
-	resp := <-ch
-	releaseRespChan(ch)
-	if err := checkResponse(resp); err != nil {
-		return nil, err
-	}
-	return resp.Result, nil
-}
-
-func MainLoop(args []string, onInit func(*App)) int {
 	app := newApp()
 	go func() {
 		select {
-		case <-readyChannel:
-			apiReady = true
+		case <-binding.ReadyChannel:
+			command.APIReady = true
 			onInit(app)
 		case <-time.After(3 * time.Second):
 			log.Fatal("Waited for 3 seconds without ready signal")
 		}
 	}()
-	return runMesonMainLoop(args)
+	return binding.RunMesonMainLoop(args)
 }
