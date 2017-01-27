@@ -2,6 +2,9 @@
 
 package main
 
+//TODO: support add icons
+//TODO: support windows
+
 import (
 	"debug/macho"
 	"fmt"
@@ -19,6 +22,7 @@ type options struct {
 	Output           string `short:"o" long:"output"`
 	BundleIdentifier string `short:"b" long:"bundle_identifier"`
 	Icon             string `short:"i" long:"icons" description:"Path to a .icns file or a .iconset dir"`
+	AssetDirectory   string `short:"a" long:"assets-dir" description:"Path to assset's directory path"`
 	executable       string
 }
 
@@ -75,8 +79,8 @@ func copyTree(dst, src string) error {
 
 		switch {
 		case info.IsDir():
-			return os.Mkdir(targ, 0777)
-		case info.Mode()&os.ModeSymlink != 0:
+			return os.MkdirAll(targ, 0777)
+		case (info.Mode() & os.ModeSymlink) != 0:
 			referent, err := os.Readlink(path)
 			if err != nil {
 				return err
@@ -188,11 +192,20 @@ func main() {
 		must(os.MkdirAll(filepath.Dir(dst), 0777))
 		must(copyTree(dst, dir))
 	}
-	exeDst := filepath.Join(tmpBundle, "Contents", "MacOs", bundleName)
+	exeDst := filepath.Join(tmpBundle, "Contents", "MacOS", bundleName)
 	must(os.MkdirAll(filepath.Dir(exeDst), 0777))
 	must(copyFile(exeDst, opts.executable))
 
 	// TODO: copy icons
+
+	// copy assets
+	if opts.AssetDirectory != "" {
+		dst := filepath.Join(tmpBundle, "Contents", "Resources", "assets")
+		if err := copyTree(dst, opts.AssetDirectory); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
 
 	// Write Info.plist
 	tpl, err := template.New("info.plist.tpl").Parse(string(MustAsset("info.plist.tpl")))

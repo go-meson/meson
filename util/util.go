@@ -27,7 +27,15 @@ const (
 	DesktopDirectory
 )
 
-func GetApplicationBundlePath() string {
+var (
+	// ApplicationBundlePath is application bundle path. if application is not bundled, empty string.
+	ApplicationBundlePath = getApplicationBundlePath()
+
+	// ApplicationAssetsPath is application asset's path.
+	ApplicationAssetsPath = getApplicationAssetsPath(ApplicationBundlePath)
+)
+
+func getApplicationBundlePath() string {
 	cstr := C.mesonGetBundlePath()
 	if cstr == nil {
 		return ""

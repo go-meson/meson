@@ -13,7 +13,7 @@ import (
 	"log"
 )
 
-type MenuRole struct {
+type Role struct {
 	Label             string
 	Accelerator       string
 	WindowMethod      string
@@ -23,17 +23,20 @@ type MenuRole struct {
 
 // platform dependents
 const (
-	MenuLabelAbout = "About {{AppName}}"
-	MenuLabelClose = "Close Window"
-	MenuLabelQuit  = "Quit {{AppName}}"
+	LabelAbout = "About {{AppName}}"
+	LabelClose = "Close Window"
+	LabelQuit  = "Quit {{AppName}}"
 
-	MenuAcceleratorQuit             = "CommandOrControl+Q"
-	MenuAcceleratorRedo             = "Shift+CommandOrControl+Z"
-	MenuAcceleratorToggleFullscreen = "Control+Command+F"
+	AcceleratorQuit             = "CommandOrControl+Q"
+	AcceleratorRedo             = "Shift+CommandOrControl+Z"
+	AcceleratorToggleFullscreen = "Control+Command+F"
 )
 
+type RoleType string
+
 const (
-	RoleAbout string = "about" //RoleAbout map to the orderFrontStandardAboutPanel action
+	//RoleAbout map to the orderFrontStandardAboutPanel action
+	RoleAbout RoleType = "about"
 	//RoleHide map to the hide action
 	RoleHide = "hide"
 	//RoleHideOthers map to the hideOtherApplications action
@@ -57,54 +60,54 @@ const (
 )
 
 // platform dependents
-var menuRolePlatform = map[string]MenuRole{
-	RoleAbout:         MenuRole{Label: MenuLabelAbout},
-	RoleHide:          MenuRole{Label: "Hide {{AppName}}", Accelerator: "Command+H"},
-	RoleHideOthers:    MenuRole{Label: "Hide Others", Accelerator: "Command+Alt+H"},
-	RoleUnHide:        MenuRole{Label: "Show All"},
-	RoleStartSpeaking: MenuRole{Label: "Start Speaking"},
-	RoleStopSpeaking:  MenuRole{Label: "Stop Speaking"},
-	RoleFront:         MenuRole{Label: "Bring All to Front"},
-	RoleZoom:          MenuRole{Label: "Zoom"},
-	RoleWindow:        MenuRole{Label: "Window"},
-	RoleHelp:          MenuRole{Label: "Help"},
-	RoleServices:      MenuRole{Label: "Services"},
+var menuRolePlatform = map[RoleType]Role{
+	RoleAbout:         Role{Label: LabelAbout},
+	RoleHide:          Role{Label: "Hide {{AppName}}", Accelerator: "Command+H"},
+	RoleHideOthers:    Role{Label: "Hide Others", Accelerator: "Command+Alt+H"},
+	RoleUnHide:        Role{Label: "Show All"},
+	RoleStartSpeaking: Role{Label: "Start Speaking"},
+	RoleStopSpeaking:  Role{Label: "Stop Speaking"},
+	RoleFront:         Role{Label: "Bring All to Front"},
+	RoleZoom:          Role{Label: "Zoom"},
+	RoleWindow:        Role{Label: "Window"},
+	RoleHelp:          Role{Label: "Help"},
+	RoleServices:      Role{Label: "Services"},
 }
 
-var menuRoleMap = map[string]MenuRole{
-	"close":              MenuRole{Label: MenuLabelClose, Accelerator: "CommandOrControl+W", WindowMethod: "close"},
-	"copy":               MenuRole{Label: "Copy", Accelerator: "CommandOrControl+C", WebContentsMethod: "copy"},
-	"cut":                MenuRole{Label: "Cut", Accelerator: "CommandOrControl+X", WebContentsMethod: "cut"},
-	"delete":             MenuRole{Label: "Delete", WebContentsMethod: "delete"},
-	"minimize":           MenuRole{Label: "Minimize", Accelerator: "CommandOrControl+M", WindowMethod: "minimize"},
-	"paste":              MenuRole{Label: "Paste", Accelerator: "CommandOrControl+V", WebContentsMethod: "paste"},
-	"pasteandmatchstyle": MenuRole{Label: "Paste and Match Style", Accelerator: "Shift+CommandOrControl+V", WebContentsMethod: "pasteAndMatchStyle"},
-	"quit":               MenuRole{Label: MenuLabelQuit, Accelerator: MenuAcceleratorQuit, AppMethod: "quit"},
-	"redo":               MenuRole{Label: "Redo", Accelerator: MenuAcceleratorRedo, WebContentsMethod: "redo"},
-	"resetzoom":          MenuRole{Label: "Actual Size", Accelerator: "CommandOrControl+0", WebContentsMethod: "_menuResetZoom"},
-	"selectall":          MenuRole{Label: "Select All", Accelerator: "CommandOrControl+A", WebContentsMethod: "selectAll"},
-	"togglefullscreen":   MenuRole{Label: "Toggle Full Screen", Accelerator: MenuAcceleratorToggleFullscreen, WindowMethod: "_menuToggleFullscreen"},
-	"undo":               MenuRole{Label: "Undo", Accelerator: "CommandOrControl+Z", WebContentsMethod: "undo"},
-	"zoomin":             MenuRole{Label: "Zoom In", Accelerator: "CommandOrControl+Plus", WebContentsMethod: "_menuZoomIn"},
-	"zoomout":            MenuRole{Label: "Zoom Out", Accelerator: "CommandOrControl+-", WebContentsMethod: "_MenuZoomOut"},
+var menuRoleMap = map[RoleType]Role{
+	"close":              Role{Label: LabelClose, Accelerator: "CommandOrControl+W", WindowMethod: "close"},
+	"copy":               Role{Label: "Copy", Accelerator: "CommandOrControl+C", WebContentsMethod: "copy"},
+	"cut":                Role{Label: "Cut", Accelerator: "CommandOrControl+X", WebContentsMethod: "cut"},
+	"delete":             Role{Label: "Delete", WebContentsMethod: "delete"},
+	"minimize":           Role{Label: "Minimize", Accelerator: "CommandOrControl+M", WindowMethod: "minimize"},
+	"paste":              Role{Label: "Paste", Accelerator: "CommandOrControl+V", WebContentsMethod: "paste"},
+	"pasteandmatchstyle": Role{Label: "Paste and Match Style", Accelerator: "Shift+CommandOrControl+V", WebContentsMethod: "pasteAndMatchStyle"},
+	"quit":               Role{Label: LabelQuit, Accelerator: AcceleratorQuit, AppMethod: "quit"},
+	"redo":               Role{Label: "Redo", Accelerator: AcceleratorRedo, WebContentsMethod: "redo"},
+	"resetzoom":          Role{Label: "Actual Size", Accelerator: "CommandOrControl+0", WebContentsMethod: "_menuResetZoom"},
+	"selectall":          Role{Label: "Select All", Accelerator: "CommandOrControl+A", WebContentsMethod: "selectAll"},
+	"togglefullscreen":   Role{Label: "Toggle Full Screen", Accelerator: AcceleratorToggleFullscreen, WindowMethod: "_menuToggleFullscreen"},
+	"undo":               Role{Label: "Undo", Accelerator: "CommandOrControl+Z", WebContentsMethod: "undo"},
+	"zoomin":             Role{Label: "Zoom In", Accelerator: "CommandOrControl+Plus", WebContentsMethod: "_menuZoomIn"},
+	"zoomout":            Role{Label: "Zoom Out", Accelerator: "CommandOrControl+-", WebContentsMethod: "_menuZoomOut"},
 }
 
-type MenuItemClickHandler func(*MenuItemTemplate, *window.Window)
+type ItemClickHandler func(*ItemTemplate, *window.Window)
 
 type MenuType binding.MenuType
 
-type MenuItemTemplate struct {
-	Type        MenuType             `json:"type"`
-	Role        string               `json:"role,omitempty"`
-	Label       string               `json:"label,omitempty"`
-	SubLabel    string               `json:"sublabel,omitempty"`
-	Accelerator string               `json:"accelerator,omitempty"`
-	ID          int                  `json:"id"`
-	Disabled    bool                 `json:"disabled"`
-	Invisible   bool                 `json:"invisible"`
-	Checked     bool                 `json:"checked"`
-	SubMenu     MenuTemplate         `json:"-"`
-	Click       MenuItemClickHandler `json:"-"`
+type ItemTemplate struct {
+	Type        MenuType         `json:"type"`
+	Role        RoleType         `json:"role,omitempty"`
+	Label       string           `json:"label,omitempty"`
+	SubLabel    string           `json:"sublabel,omitempty"`
+	Accelerator string           `json:"accelerator,omitempty"`
+	ID          int              `json:"id"`
+	Disabled    bool             `json:"disabled"`
+	Invisible   bool             `json:"invisible"`
+	Checked     bool             `json:"checked"`
+	SubMenu     Template         `json:"-"`
+	Click       ItemClickHandler `json:"-"`
 	//Icon        image.Image // TODO: handle native image?
 	// hidden properties
 	windowMethod      string
@@ -115,7 +118,7 @@ type MenuItemTemplate struct {
 }
 
 type menuItemTemplateWrapper struct {
-	MenuItemTemplate
+	ItemTemplate
 	WindowMethod      string `json:"windowMethod,omitempty"`
 	WebContentsMethod string `json:"webContentsMethod,omitempty"`
 	AppMethod         string `json:"appMethod,omitempty"`
@@ -131,9 +134,9 @@ const (
 	MenuTypeRadio              = MenuType(binding.MenuTypeRadio)
 )
 
-func newMenuItemTemplateWrapper(mi *MenuItemTemplate) *menuItemTemplateWrapper {
+func newItemTemplateWrapper(mi *ItemTemplate) *menuItemTemplateWrapper {
 	return &menuItemTemplateWrapper{
-		MenuItemTemplate:  *mi,
+		ItemTemplate:      *mi,
 		WindowMethod:      mi.windowMethod,
 		WebContentsMethod: mi.webContentsMethod,
 		AppMethod:         mi.appMethod,
@@ -142,20 +145,20 @@ func newMenuItemTemplateWrapper(mi *MenuItemTemplate) *menuItemTemplateWrapper {
 	}
 }
 
-func (mi *MenuItemTemplate) fixMenuType() error {
+func (mi *ItemTemplate) fixMenuType() error {
 	if len(mi.SubMenu) > 0 {
 		mi.Type = binding.MenuTypeSubmenu
 	} else if mi.Type == MenuTypeSubmenu {
-		return fmt.Errorf("MenuTemplate type is MenuTypeSubmenu, but not have SubMenu.")
+		return fmt.Errorf("Template type is MenuTypeSubmenu, but not have SubMenu.")
 	}
 	return nil
 }
 
-func (mi *MenuItemTemplate) applyRole() error {
+func (mi *ItemTemplate) applyRole() error {
 	if mi.Role == "" {
 		return nil
 	}
-	var r MenuRole
+	var r Role
 	var ok bool
 	r, ok = menuRolePlatform[mi.Role]
 	if !ok {
@@ -176,36 +179,10 @@ func (mi *MenuItemTemplate) applyRole() error {
 	return nil
 }
 
-type MenuTemplate []MenuItemTemplate
-
-/*
-func (mi *MenuItemTemplate) apply(f func(*MenuItemTemplate) error) error {
-	if err := f(mi); err != nil {
-		return err
-	}
-	if mi.SubMenu != nil {
-		if err := mi.SubMenu.apply(f); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (m *MenuTemplate) apply(f func(*MenuItemTemplate) error) error {
-	for i := 0; i < len(*m); i++ {
-		mi := &(*m)[i]
-		fmt.Printf("mi[%d]: %s\n", i, mi.Label)
-		if err := mi.apply(f); err != nil {
-			return err
-		}
-
-	}
-	return nil
-}
-*/
+type Template []ItemTemplate
 
 type menuItemClickItem struct {
-	mi *MenuItemTemplate
+	mi *ItemTemplate
 }
 
 func (p menuItemClickItem) Call(o obj.ObjectRef, arg interface{}) (bool, error) {
@@ -226,7 +203,7 @@ type menuCallback map[int]func()
 
 var menuCallbackMap = map[int]menuCallback{}
 
-func (m *MenuTemplate) collectMenuID(idMap map[int]*MenuItemTemplate) error {
+func (m *Template) collectMenuID(idMap map[int]*ItemTemplate) error {
 	// collect menu ID
 	for i := 0; i < len(*m); i++ {
 		mi := &(*m)[i]
@@ -243,7 +220,7 @@ func (m *MenuTemplate) collectMenuID(idMap map[int]*MenuItemTemplate) error {
 }
 
 // set menu id to empty commands
-func (m *MenuTemplate) fillMenuID(idMap map[int]*MenuItemTemplate) {
+func (m *Template) fillMenuID(idMap map[int]*ItemTemplate) {
 	menuIndex := 0
 	for i := 0; i < len(*m); i++ {
 		mi := &(*m)[i]
@@ -275,7 +252,7 @@ func newMenu(id int64) *Menu {
 	return menu
 }
 
-func NewMenuWithTemplate(template MenuTemplate) (*Menu, error) {
+func NewWithTemplate(template Template) (*Menu, error) {
 	if !command.APIReady {
 		return nil, errors.New("meson api is not ready yet")
 	}
@@ -299,8 +276,8 @@ func NewMenuWithTemplate(template MenuTemplate) (*Menu, error) {
 	return menu, nil
 }
 
-func (m *Menu) LoadTemplate(template MenuTemplate) error {
-	idMap := make(map[int]*MenuItemTemplate)
+func (m *Menu) LoadTemplate(template Template) error {
+	idMap := make(map[int]*ItemTemplate)
 	if err := template.collectMenuID(idMap); err != nil {
 		return err
 	}
@@ -315,7 +292,7 @@ func (m *Menu) LoadTemplate(template MenuTemplate) error {
 			ids = append(ids, mi.ID)
 		}
 		if mi.Type == MenuTypeSubmenu {
-			sm, err := NewMenuWithTemplate(mi.SubMenu)
+			sm, err := NewWithTemplate(mi.SubMenu)
 			if err != nil {
 				return err
 			}
@@ -339,7 +316,7 @@ func (m *Menu) LoadTemplate(template MenuTemplate) error {
 
 	items := make([]interface{}, len(template))
 	for i, t := range template {
-		items[i] = newMenuItemTemplateWrapper(&t)
+		items[i] = newItemTemplateWrapper(&t)
 	}
 	cmd := command.MakeCallCommand(m.ObjType, m.Id, "loadTemplate", items...)
 	_, err = command.SendMessage(&cmd)

@@ -12,19 +12,21 @@ import (
 	"github.com/go-meson/meson/object"
 	"github.com/go-meson/meson/util"
 	"github.com/go-meson/meson/window"
+	"net/url"
+	"path/filepath"
 )
 
 var (
 	counter = 0
 )
 
-func onClick(mi *menu.MenuItemTemplate, w *window.Window) {
+func onClick(mi *menu.ItemTemplate, w *window.Window) {
 	log.Printf("clicked: %#v\n", mi)
 	str := "This app is running in bundle : "
 	dialog.ShowMessageBox(w, str, "Test", dialog.MessageBoxTypeInfo, nil)
 }
 
-func onOpenDevTool(mi *menu.MenuItemTemplate, w *window.Window) {
+func onOpenDevTool(mi *menu.ItemTemplate, w *window.Window) {
 	log.Printf("opendev: %#v, %#v", mi, w)
 	if w.IsDevToolOpened() {
 		w.CloseDevTool()
@@ -33,12 +35,12 @@ func onOpenDevTool(mi *menu.MenuItemTemplate, w *window.Window) {
 	}
 }
 
-var mainMenu = menu.MenuTemplate{
-	{Label: "Test1111111", SubMenu: menu.MenuTemplate{
+var mainMenu = menu.Template{
+	{Label: "Test1111111", SubMenu: menu.Template{
 		{Label: "Test1-1", Click: onClick},
 		{Label: "Test1-2"},
 		{Label: "Quit", Role: "quit"}}},
-	{Label: "Test22222", SubMenu: menu.MenuTemplate{
+	{Label: "Test22222", SubMenu: menu.Template{
 		{Label: "openDevTool", Click: onOpenDevTool},
 		{Label: "Test2-2"}}},
 }
@@ -54,11 +56,11 @@ func main() {
 	}
 	logger.RedirectStdout()
 	logger.RedirectStderr()
-	log.Printf("bundlePath = %s\n", util.GetApplicationBundlePath())
+	log.Printf("bundlePath = %s\n", util.ApplicationBundlePath)
 	meson.MainLoop(os.Args, func(a *app.App) {
 		//meson.ShowMessageBox(nil, "This is Menu callback", "Test", meson.MessageBoxTypeInfo, nil)
 
-		m, err := menu.NewMenuWithTemplate(mainMenu)
+		m, err := menu.NewWithTemplate(mainMenu)
 		log.Printf("menu: %#v, err: %#v\n", m, err)
 		if err != nil {
 			log.Fatal(err)
@@ -101,7 +103,15 @@ func main() {
 			return true
 		})
 		//win.LoadURL("http://www.google.co.jp")
-		win.LoadURL("file:////Users/yoshikawa/.go/src/github.com/go-meson/meson/test.html")
+		log.Printf("assets=%s\n", util.ApplicationAssetsPath)
+		//TODO: 正しい方法にあとでなおす
+		p, err := url.Parse("file://" + filepath.ToSlash(filepath.Join(util.ApplicationAssetsPath, "test.html")))
+		if err != nil {
+			return
+		}
+		log.Printf("url: %#v\n", p)
+		win.LoadURL(p.String())
+		//win.LoadURL("file:////Users/yoshikawa/.go/src/github.com/go-meson/meson/test.html")
 		/*
 			if err != nil {
 				log.Printf("LoadURL fail: %q", err)

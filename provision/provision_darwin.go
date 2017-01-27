@@ -17,7 +17,7 @@ func GetFrameworkPathFromRootPath(rootPath string) string {
 
 func GetFrameworkPath(version string) (string, error) {
 	var frameworkRoot string
-	if bundlePath := util.GetApplicationBundlePath(); bundlePath != "" {
+	if bundlePath := util.ApplicationBundlePath; bundlePath != "" {
 		if stat, err := os.Stat(bundlePath); err != nil || !stat.IsDir() {
 			return "", errors.New("invalid application structure")
 		}
