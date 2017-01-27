@@ -1,0 +1,54 @@
+<html>
+    <head>
+        <title>test</title>
+    </head>
+    <style>
+     html {
+     }
+     body {
+         display: flex;
+         flex-flow: column;
+         margin: 0;
+         padding: 0;
+     }
+     body > header {
+         display: block;
+         flex: 0 1 auto;
+         background-color: #ffcccc;
+         margin: 0px;
+     }
+     body > article {
+         display: block;
+         flex: 1 1 auto;
+         position: relative;
+         margin: 0px;
+     }
+     body > footer {
+         display: block;
+         flex: 0 1 auto;
+         background-color: #ffcccc;
+         margin: 0px;
+     }
+     webview {
+         position: absolute;
+         top: 0;
+         left: 0;
+         right: 0;
+         bottom: 0;
+         }
+    </style>
+    <body>
+        <header>
+            <h1>Meson Test</h1>
+            <p>test1</p>
+        </header>
+        <article>
+        <webview src="http://www.google.co.jp" autosize="on" minwidth="10" minheight="10">
+            ???
+        </webview>
+        </article>
+        <footer>
+            <p>meson test contents</p>
+        </footer>
+    </body>
+</html>
