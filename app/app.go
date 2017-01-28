@@ -1,3 +1,4 @@
+// Package app control your application’s event lifecycle.
 package app
 
 import (
@@ -6,10 +7,9 @@ import (
 	"github.com/go-meson/meson/internal/command"
 	evt "github.com/go-meson/meson/internal/event"
 	"github.com/go-meson/meson/internal/object"
-	"github.com/go-meson/meson/menu"
 )
 
-// App Control your application’s event lifecycle.
+// App is your application’s instance.
 type App struct {
 	object.Object
 }
@@ -17,21 +17,21 @@ type App struct {
 //------------------------------------------------------------------------
 // Methods
 
+// Exit exit meson application with exit code.
 func Exit(code int) {
 	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjAppID, "exit", code)
-	command.PostMessage(&cmd)
-}
-
-func (app *App) SetApplicationMenu(menu *menu.Menu) error {
-	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjAppID, "setApplicationMenu", menu)
-	_, err := command.SendMessage(&cmd)
-	return err
+	if err := command.PostMessage(&cmd); err != nil {
+		panic(err)
+	}
 }
 
 //------------------------------------------------------------------------
 // Callbacks
 
-func (app *App) OnWindowCloseAll(callback event.CommonCallbackHandler) {
+// OnWindowCloseAll set 'window-all-closed' event handler.
+//
+// 'window-all-closed' emitted when all windows have been closed.
+func (app *App) OnWindowCloseAll(callback event.CommonCallbackHandler) error {
 	const en = "window-all-closed"
-	evt.AddCallback(&app.Object, en, evt.CommonCallbackItem{F: callback})
+	return evt.AddCallback(&app.Object, en, evt.CommonCallbackItem{F: callback})
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/go-meson/meson/internal/command"
 	"github.com/go-meson/meson/internal/event"
 	"github.com/go-meson/meson/internal/object"
+	"github.com/go-meson/meson/util"
 	"github.com/koron/go-dproxy"
 )
 
@@ -53,7 +54,7 @@ var FramedWindowOptions = WindowOptions{
 	CloseButton:      true,
 	MinButton:        true,
 	FullScreenButton: true,
-	Title:            "Meson",
+	Title:            util.ApplicationName,
 }
 
 // NewBrowserWindow Create and control browser windows.
@@ -102,7 +103,9 @@ func (w *Window) Close() {
 func (w *Window) OpenDevTool() {
 	// TODO: options??
 	cmd := command.MakeCallCommand(w.ObjType, w.Id, "OpenDevTools")
-	command.PostMessage(&cmd)
+	if err := command.PostMessage(&cmd); err != nil {
+		panic(err)
+	}
 }
 
 func (w *Window) CloseDevTool() {

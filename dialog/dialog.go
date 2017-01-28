@@ -13,15 +13,14 @@ import (
 	"log"
 )
 
+// MessageBoxOpt is dialog box creation options.
 type MessageBoxOpt struct {
-	Buttons   []string `json:"buttons"`
-	DefaultID int      `json:"defaultId"`
-	CancelID  int      `json:"cancelId"`
-	Detail    string   `json:"detail"`
-	NoLink    bool     `json:"noLink"`
+	Buttons   []string `json:"buttons"`   // Array of texts for buttons.
+	DefaultID int      `json:"defaultId"` // Index in the Buttons array which will be selected by default when the message box opened.
+	CancelID  int      `json:"cancelId"`  // Index in the Buttons array which will be selected when user cancels the dialog instead of clicking the buttons of the dialog.
+	Detail    string   `json:"detail"`    // Extra information of the message
+	NoLink    bool     `json:"noLink"`    // TODO:
 }
-
-type MessageBoxType binding.MessageBoxType
 
 type msgBoxOpt struct {
 	Type    MessageBoxType `json:"type"`
@@ -30,12 +29,15 @@ type msgBoxOpt struct {
 	MessageBoxOpt
 }
 
+// MessageBoxType is following message box type.
+type MessageBoxType binding.MessageBoxType
+
 const (
-	MessageBoxTypeNone     MessageBoxType = MessageBoxType(binding.MessageBoxTypeNone)
-	MessageBoxTypeInfo                    = MessageBoxType(binding.MessageBoxTypeInfo)
-	MessageBoxTypeWarning                 = MessageBoxType(binding.MessageBoxTypeWarning)
-	MessageBoxTypeError                   = MessageBoxType(binding.MessageBoxTypeError)
-	MessageBoxTypeQuestion                = MessageBoxType(binding.MessageBoxTypeQuestion)
+	MessageBoxTypeNone     MessageBoxType = MessageBoxType(binding.MessageBoxTypeNone)     // without icons
+	MessageBoxTypeInfo                    = MessageBoxType(binding.MessageBoxTypeInfo)     // with icon for message information.
+	MessageBoxTypeWarning                 = MessageBoxType(binding.MessageBoxTypeWarning)  // with icon for message warning.
+	MessageBoxTypeError                   = MessageBoxType(binding.MessageBoxTypeError)    // with icon for message error.
+	MessageBoxTypeQuestion                = MessageBoxType(binding.MessageBoxTypeQuestion) // with icon for question message.
 )
 
 func makeMsgBoxOpt(message string, title string, messageBoxType MessageBoxType, opt *MessageBoxOpt) msgBoxOpt {
@@ -119,21 +121,25 @@ func ShowMessageBoxAsync(window *window.Window, message string, title string, me
 		eventNo := app.AddRegisterdCallback(eventID, item)
 		item.eventNo = eventNo
 		cmd := command.MakeCallCommand(app.ObjType, app.Id, "showMessageBox", winid, &tmpl, eventName)
-		command.SendMessageAsync(&cmd, func(r *command.Response) {
+		if err := command.SendMessageAsync(&cmd, func(r *command.Response) {
 			if err := command.CheckResponse(r); err != nil {
 				handler(-1, err)
 				event.DeleteRegisterdCallback(&app.Object, eventID, eventNo)
 				return
 			}
-		})
+		}); err != nil {
+			panic(err)
+		}
 	})
 
 	cmd := command.MakeTempEventCommand(app.ObjType, app.Id, 1)
-	command.SendMessageAsync(&cmd, func(r *command.Response) {
+	if err := command.SendMessageAsync(&cmd, func(r *command.Response) {
 		if err := command.CheckResponse(r); err != nil {
 			handler(-1, err)
 			return
 		}
 
-	})
+	}); err != nil {
+		panic(err)
+	}
 }

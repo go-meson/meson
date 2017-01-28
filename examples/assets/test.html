@@ -1,7 +1,6 @@
 <html>
     <head>
         <title>test</title>
-    </head>
     <style>
      html {
      }
@@ -37,10 +36,18 @@
          bottom: 0;
          }
     </style>
+    <script language="javascript" type="text/javascript">
+     function hoge() {
+         console.log("HogeHoge");
+         console.log(window.THRUST.remote);
+window.THRUST.remote.send("HogeHoge");
+         }
+    </script>
+    </head>
     <body>
         <header>
             <h1>Meson Test</h1>
-            <p>test1</p>
+            <button onclick="hoge()" type="button">Test</button>
         </header>
         <article>
         <webview src="http://www.google.co.jp" autosize="on" minwidth="10" minheight="10">

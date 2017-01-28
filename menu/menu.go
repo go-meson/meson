@@ -11,6 +11,7 @@ import (
 	"github.com/go-meson/meson/window"
 	"github.com/koron/go-dproxy"
 	"log"
+	"runtime"
 )
 
 type Role struct {
@@ -324,4 +325,15 @@ func (m *Menu) LoadTemplate(template Template) error {
 		return err
 	}
 	return nil
+}
+
+// SetApplicationMenu sets menu as the application menu on macOS.
+func SetApplicationMenu(menu *Menu) error {
+	if runtime.GOOS != "darwin" {
+		//TODO: linux/windowsでの動作確認
+		return errors.New("Current platform is not supported this method currently.")
+	}
+	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjAppID, "setApplicationMenu", menu)
+	_, err := command.SendMessage(&cmd)
+	return err
 }

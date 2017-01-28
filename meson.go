@@ -18,6 +18,7 @@ func newApp() *app.App {
 	return app
 }
 
+// MainLoop start meson application main loop. It returns an exit code to pass to App.Exit.
 func MainLoop(args []string, onInit func(*app.App)) int {
 	err := binding.LoadBinding()
 	if err != nil {

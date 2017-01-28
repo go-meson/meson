@@ -13,11 +13,8 @@ import (
 	"github.com/go-meson/meson/util"
 	"github.com/go-meson/meson/window"
 	"net/url"
+	"os/user"
 	"path/filepath"
-)
-
-var (
-	counter = 0
 )
 
 func onClick(mi *menu.ItemTemplate, w *window.Window) {
@@ -35,22 +32,38 @@ func onOpenDevTool(mi *menu.ItemTemplate, w *window.Window) {
 	}
 }
 
+func onClickDialogTest(mi *menu.ItemTemplate, w *window.Window) {
+	opt := dialog.MessageBoxOpt{
+		Buttons:   []string{"OK", "Cancel", "Foo1", "Foo2"},
+		Detail:    "some details",
+		DefaultID: 0,
+		CancelID:  1,
+		NoLink:    true,
+	}
+	dialog.ShowMessageBox(w, "This is options test", "Option test", dialog.MessageBoxTypeQuestion, &opt)
+}
+
 var mainMenu = menu.Template{
 	{Label: "Test1111111", SubMenu: menu.Template{
 		{Label: "Test1-1", Click: onClick},
-		{Label: "Test1-2"},
+		{Label: "Test1-2", Click: onClickDialogTest},
 		{Label: "Quit", Role: "quit"}}},
 	{Label: "Test22222", SubMenu: menu.Template{
 		{Label: "openDevTool", Click: onOpenDevTool},
 		{Label: "Test2-2"}}},
 }
 
-type WinUserData struct {
+type winUserData struct {
 	doClosing bool
 }
 
 func main() {
-	if err := logger.SetFileLogger("/Users/yoshikawa/.go/src/github.com/go-meson/meson/test.log"); err != nil {
+	u, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	if err := logger.SetFileLogger(filepath.Join(u.HomeDir, util.ApplicationName+".log")); err != nil {
 		log.Fatal(err)
 		return
 	}
@@ -58,15 +71,12 @@ func main() {
 	logger.RedirectStderr()
 	log.Printf("bundlePath = %s\n", util.ApplicationBundlePath)
 	meson.MainLoop(os.Args, func(a *app.App) {
-		//meson.ShowMessageBox(nil, "This is Menu callback", "Test", meson.MessageBoxTypeInfo, nil)
-
 		m, err := menu.NewWithTemplate(mainMenu)
-		log.Printf("menu: %#v, err: %#v\n", m, err)
 		if err != nil {
 			log.Fatal(err)
 			app.Exit(-1)
 		}
-		a.SetApplicationMenu(m)
+		menu.SetApplicationMenu(m)
 
 		a.OnWindowCloseAll(func(sender object.ObjectRef) {
 			log.Println("**** WindowCloseAll ***")
@@ -83,11 +93,11 @@ func main() {
 			log.Printf("Create window fail: %q", err)
 			return
 		}
-		//win.OpenDevTool()
-		win.UserData = &WinUserData{}
-		log.Printf("win = %#v\n", win)
+		win.UserData = &winUserData{}
+		win.OpenDevTool()
+
 		win.OnWindowClose(func(sender object.ObjectRef) bool {
-			ud := win.UserData.(*WinUserData)
+			ud := win.UserData.(*winUserData)
 			if ud.doClosing {
 				return false
 			}
@@ -102,22 +112,10 @@ func main() {
 			})
 			return true
 		})
-		//win.LoadURL("http://www.google.co.jp")
-		log.Printf("assets=%s\n", util.ApplicationAssetsPath)
-		//TODO: 正しい方法にあとでなおす
-		p, err := url.Parse("file://" + filepath.ToSlash(filepath.Join(util.ApplicationAssetsPath, "test.html")))
-		if err != nil {
-			return
+		u := url.URL{
+			Scheme: "file",
+			Path:   filepath.ToSlash(filepath.Join(util.ApplicationAssetsPath, "test.html")),
 		}
-		log.Printf("url: %#v\n", p)
-		win.LoadURL(p.String())
-		//win.LoadURL("file:////Users/yoshikawa/.go/src/github.com/go-meson/meson/test.html")
-		/*
-			if err != nil {
-				log.Printf("LoadURL fail: %q", err)
-				return
-			}
-			log.Printf("***** LoadURL success")
-		*/
+		win.LoadURL(u.String())
 	})
 }

@@ -24,6 +24,21 @@ char *mesonGetBundlePath() {
   return ret;
 }
 
+char *mesonGetApplicationName() {
+  NSRunningApplication* app = [NSRunningApplication currentApplication];
+  char* ret = NULL;
+  if (app) {
+    NSString* str = app.localizedName;
+    if (str) {
+      const char* pstr = [str UTF8String];
+      ret = strdup(pstr);
+      [str release];
+    }
+  }
+
+  return ret;
+}
+
 char *mesonGetSystemDirectoryPath(int type) {
   NSSearchPathDirectory pathType;
   NSSearchPathDomainMask domainType = NSUserDomainMask;

@@ -9,8 +9,12 @@ package util
 
 extern char* mesonGetBundlePath(void);
 extern char* mesonGetSystemDirectoryPath(int);
+extern char* mesonGetApplicationName(void);
 */
 import "C"
+import "path/filepath"
+import "os"
+import "strings"
 
 import "unsafe"
 
@@ -33,6 +37,9 @@ var (
 
 	// ApplicationAssetsPath is application asset's path.
 	ApplicationAssetsPath = getApplicationAssetsPath(ApplicationBundlePath)
+
+	// ApplicationName is application name.
+	ApplicationName = getApplicationName()
 )
 
 func getApplicationBundlePath() string {
@@ -51,6 +58,17 @@ func GetSystemDirectoryPath(dir SystemDirectoryType) string {
 	cstr := C.mesonGetSystemDirectoryPath(cdir)
 	if cstr == nil {
 		return ""
+	}
+	str := C.GoString(cstr)
+	C.free(unsafe.Pointer(cstr))
+	return str
+}
+
+func getApplicationName() string {
+	cstr := C.mesonGetApplicationName()
+	if cstr == nil {
+		base := filepath.Base(os.Args[0])
+		return strings.TrimSuffix(filepath.Base(base), filepath.Ext(base))
 	}
 	str := C.GoString(cstr)
 	C.free(unsafe.Pointer(cstr))
