@@ -1,6 +1,7 @@
 package dialog
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/go-meson/meson/app"
 	"github.com/go-meson/meson/internal/binding"
@@ -9,7 +10,6 @@ import (
 	obj "github.com/go-meson/meson/internal/object"
 	"github.com/go-meson/meson/object"
 	"github.com/go-meson/meson/window"
-	"github.com/koron/go-dproxy"
 	"log"
 )
 
@@ -67,7 +67,8 @@ func ShowMessageBox(window *window.Window, message string, title string, message
 	if err != nil {
 		return -1, err
 	}
-	buttonID, err := dproxy.New(r).Int64()
+	var buttonID int
+	err = json.Unmarshal(r, &buttonID)
 	if err != nil {
 		return -1, err
 	}
@@ -82,18 +83,17 @@ type msgBoxCallbackItem struct {
 	eventNo int
 }
 
-func (mb msgBoxCallbackItem) Call(o object.ObjectRef, arg interface{}) (bool, error) {
-	app := o.(*app.App)
-	args, ok := arg.([]interface{})
-	if !ok || len(args) != 1 {
-		log.Panicf("Invalid arg type: %#v", arg)
-	}
-	button, err := dproxy.New(args[0]).Int64()
+func (mb msgBoxCallbackItem) Call(o object.ObjectRef, arg json.RawMessage) (bool, error) {
+	args := struct {
+		ButtonID int `json:"buttonID"`
+	}{}
+	err := json.Unmarshal(arg, &args)
 	if err != nil {
 		mb.f(-1, err)
 	} else {
-		mb.f(int(button), nil)
+		mb.f(args.ButtonID, nil)
 	}
+	app := o.(*app.App)
 	log.Printf("eventID = %d, eventNo = %d\n", mb.eventID, mb.eventNo)
 	event.DeleteRegisterdCallback(&app.Object, mb.eventID, mb.eventNo)
 	return false, nil
@@ -115,8 +115,8 @@ func ShowMessageBoxAsync(window *window.Window, message string, title string, me
 			handler(-1, err)
 			return
 		}
-		eventID := items[0].Id
-		eventName := items[0].Name
+		eventID := items[0].EventID
+		eventName := items[0].EventName
 		item := &msgBoxCallbackItem{f: handler, eventID: eventID}
 		eventNo := app.AddRegisterdCallback(eventID, item)
 		item.eventNo = eventNo

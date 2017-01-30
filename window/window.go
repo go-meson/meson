@@ -1,6 +1,7 @@
 package window
 
 import (
+	"encoding/json"
 	"errors"
 	evt "github.com/go-meson/meson/event"
 	"github.com/go-meson/meson/internal/binding"
@@ -8,7 +9,6 @@ import (
 	"github.com/go-meson/meson/internal/event"
 	"github.com/go-meson/meson/internal/object"
 	"github.com/go-meson/meson/util"
-	"github.com/koron/go-dproxy"
 )
 
 // Rect represents a rectangular region on the screen
@@ -69,8 +69,8 @@ func NewBrowserWindow(opt *WindowOptions) (*Window, error) {
 		return nil, err
 	}
 
-	id, err := dproxy.New(response).Int64()
-	if err != nil {
+	var id int64
+	if err := json.Unmarshal(response, &id); err != nil {
 		return nil, err
 	}
 
@@ -119,7 +119,10 @@ func (w *Window) IsDevToolOpened() bool {
 	if err != nil {
 		return false
 	}
-	b, _ := dproxy.New(r).Bool()
+	var b bool
+	if err := json.Unmarshal(r, &b); err != nil {
+		return false
+	}
 	return b
 }
 

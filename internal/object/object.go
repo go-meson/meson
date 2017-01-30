@@ -9,7 +9,7 @@ import (
 )
 
 type CallbackInterface interface {
-	Call(obj.ObjectRef, interface{}) (bool, error)
+	Call(obj.ObjectRef, json.RawMessage) (bool, error)
 }
 
 type eventRegisters map[int64][]CallbackInterface
@@ -23,7 +23,7 @@ type Object struct {
 
 type ObjectRefInternal interface {
 	obj.ObjectRef
-	EmitEvent(sender ObjectRefInternal, eventID int64, arg interface{}) (bool, error)
+	EmitEvent(sender ObjectRefInternal, eventID int64, arg json.RawMessage) (bool, error)
 }
 
 var (
@@ -61,7 +61,7 @@ func (o *Object) GetObjectType() obj.ObjectType {
 	return o.ObjType
 }
 
-func (o *Object) EmitEvent(sender ObjectRefInternal, eventID int64, args interface{}) (bool, error) {
+func (o *Object) EmitEvent(sender ObjectRefInternal, eventID int64, args json.RawMessage) (bool, error) {
 	var prevent = false
 
 	if events, ok := o.registerdEvents[eventID]; ok {

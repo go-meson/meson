@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-meson/meson/internal/binding"
@@ -9,7 +10,6 @@ import (
 	"github.com/go-meson/meson/internal/object"
 	obj "github.com/go-meson/meson/object"
 	"github.com/go-meson/meson/window"
-	"github.com/koron/go-dproxy"
 	"log"
 	"runtime"
 )
@@ -186,16 +186,15 @@ type menuItemClickItem struct {
 	mi *ItemTemplate
 }
 
-func (p menuItemClickItem) Call(o obj.ObjectRef, arg interface{}) (bool, error) {
-	args, ok := arg.([]interface{})
-	if !ok || len(args) != 1 {
-		log.Panicf("Invalid arg type: %#v", arg)
-	}
-	id, err := dproxy.New(args[0]).Int64()
-	if err != nil {
+func (p menuItemClickItem) Call(o obj.ObjectRef, arg json.RawMessage) (bool, error) {
+	log.Printf("menuItemClickItem::Call : %#v\n", arg)
+	args := struct {
+		FocusID int64 `json:"focusID"`
+	}{}
+	if err := json.Unmarshal(arg, &args); err != nil {
 		return false, err
 	}
-	win := object.GetObject(id).(*window.Window)
+	win := object.GetObject(args.FocusID).(*window.Window)
 	p.mi.Click(p.mi, win)
 	return false, nil
 }
@@ -263,7 +262,8 @@ func NewWithTemplate(template Template) (*Menu, error) {
 	if err != nil {
 		return nil, err
 	}
-	id, err := dproxy.New(resp).Int64()
+	var id int64
+	err = json.Unmarshal(resp, &id)
 	if err != nil {
 		return nil, err
 	}
@@ -309,8 +309,8 @@ func (m *Menu) LoadTemplate(template Template) error {
 	for idx := 0; idx < len(ids); idx++ {
 		id := ids[idx]
 		mi := idMap[id]
-		eventID := tempEvents[idx].Id
-		eventName := tempEvents[idx].Name
+		eventID := tempEvents[idx].EventID
+		eventName := tempEvents[idx].EventName
 		mi.eventName = eventName
 		m.AddRegisterdCallback(eventID, menuItemClickItem{mi: mi})
 	}

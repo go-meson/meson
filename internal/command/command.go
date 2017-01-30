@@ -51,7 +51,7 @@ type Response struct {
 	ID       int64              `json:"_id"`
 	EventID  int64              `json:"_eventId"`
 	Method   string             `json:"_method,omitempty"`
-	Result   interface{}        `json:"_result"`
+	Result   json.RawMessage    `json:"_result"`
 }
 
 type ChResp chan *Response
@@ -142,7 +142,7 @@ func SendMessageAsync(cmd *Command, handler respHandler) error {
 	return sendMessage(cmd, actionID, handler)
 }
 
-func SendMessage(cmd *Command) (interface{}, error) {
+func SendMessage(cmd *Command) (json.RawMessage, error) {
 	if !binding.TryEnterSendMessage() {
 		return nil, errors.New("invalid context")
 	}

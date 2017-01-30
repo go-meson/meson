@@ -1,13 +1,11 @@
 package event
 
 import (
-	"fmt"
+	"encoding/json"
 	evt "github.com/go-meson/meson/event"
 	"github.com/go-meson/meson/internal/command"
 	"github.com/go-meson/meson/internal/object"
 	obj "github.com/go-meson/meson/object"
-	"github.com/koron/go-dproxy"
-	"log"
 )
 
 func AddCallback(o *object.Object, event string, callback object.CallbackInterface) error {
@@ -18,7 +16,8 @@ func AddCallback(o *object.Object, event string, callback object.CallbackInterfa
 		return err
 	}
 
-	eventID, err := dproxy.New(resp).Int64()
+	var eventID int64
+	err = json.Unmarshal(resp, &eventID)
 	if err != nil {
 		return err
 	}
@@ -29,8 +28,8 @@ func AddCallback(o *object.Object, event string, callback object.CallbackInterfa
 }
 
 type TempEventItem struct {
-	Id   int64  `json:"id"`
-	Name string `json:"name"`
+	EventID   int64  `json:"eventId"`
+	EventName string `json:"eventName"`
 }
 
 func MakeTempEventAsync(o *object.Object, num int, handler func([]TempEventItem, error)) {
@@ -40,24 +39,12 @@ func MakeTempEventAsync(o *object.Object, num int, handler func([]TempEventItem,
 			handler(nil, err)
 			return
 		}
-		rproxy := dproxy.New(r.Result)
-		resplen := 0
-		if rarray, err := rproxy.Array(); err == nil {
-			resplen = len(rarray)
-		} else {
+		var events []TempEventItem
+		if err := json.Unmarshal(r.Result, &events); err != nil {
 			handler(nil, err)
 			return
 		}
-		if num != resplen {
-			handler(nil, fmt.Errorf("Response length error %d -> %d", num, resplen))
-			return
-		}
-		ret := make([]TempEventItem, resplen)
-		for idx := 0; idx < resplen; idx++ {
-			ret[idx].Id, _ = rproxy.A(idx).M("eventId").Int64()
-			ret[idx].Name, _ = rproxy.A(idx).M("eventName").String()
-		}
-		handler(ret, nil)
+		handler(events, nil)
 	})
 }
 
@@ -90,11 +77,7 @@ type CommonCallbackItem struct {
 	F evt.CommonCallbackHandler
 }
 
-func (p CommonCallbackItem) Call(o obj.ObjectRef, arg interface{}) (bool, error) {
-	args, ok := arg.([]interface{})
-	if !ok || len(args) != 0 {
-		log.Panicf("Invalid arg type: %#v", arg)
-	}
+func (p CommonCallbackItem) Call(o obj.ObjectRef, arg json.RawMessage) (bool, error) {
 	p.F(o)
 	return false, nil
 }
@@ -103,10 +86,6 @@ type CommonPreventableCallbackItem struct {
 	F evt.CommonPreventableCallbackHandler
 }
 
-func (p CommonPreventableCallbackItem) Call(o obj.ObjectRef, arg interface{}) (bool, error) {
-	args, ok := arg.([]interface{})
-	if !ok || len(args) != 0 {
-		log.Panicf("Invalid arg type: %#v", arg)
-	}
+func (p CommonPreventableCallbackItem) Call(o obj.ObjectRef, arg json.RawMessage) (bool, error) {
 	return p.F(o), nil
 }
