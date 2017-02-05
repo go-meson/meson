@@ -13,8 +13,8 @@ func init() {
 }
 
 func newApp() *app.App {
-	app := &app.App{Object: object.NewObject(binding.ObjAppID, binding.ObjApp)}
-	object.AddObject(binding.ObjAppID, app)
+	app := &app.App{Object: object.NewObject(binding.ObjStaticID, binding.ObjApp)}
+	object.AddObject(binding.ObjApp, binding.ObjStaticID, app)
 	return app
 }
 

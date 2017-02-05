@@ -24,6 +24,8 @@ func MakeCreateCommand(objType obj.ObjectType, args ...interface{}) Command {
 	return Command{
 		Action: binding.ActCreate,
 		Type:   objType,
+		ID:     binding.ObjStaticID,
+		Method: "_create",
 		Args:   args,
 	}
 }
@@ -32,26 +34,33 @@ func MakeCallCommand(objType obj.ObjectType, id int64, method string, args ...in
 	return Command{
 		Action: binding.ActCall,
 		Type:   objType,
-		Method: method,
 		ID:     id,
+		Method: method,
 		Args:   args,
 	}
 }
 
 type regEventOpt struct {
-	Delete    bool `json:"delete"`
-	Temporary bool `json:"temporary"`
-	Number    int  `json:"number"`
+	Name      string `json:"eventName"`
+	Delete    bool   `json:"delete"`
+	Temporary bool   `json:"temporary"`
+	Number    int    `json:"number"`
 }
 
 type Response struct {
 	Action   binding.ActionType `json:"_action"`
 	ActionID int64              `json:"_actionId"`
 	Error    string             `json:"_error"`
+	Type     obj.ObjectType     `json:"_type"`
 	ID       int64              `json:"_id"`
 	EventID  int64              `json:"_eventId"`
 	Method   string             `json:"_method,omitempty"`
 	Result   json.RawMessage    `json:"_result"`
+}
+
+type CreateRespResult struct {
+	Type obj.ObjectType `json:"_type"`
+	ID   int64          `json:"_id"`
 }
 
 type ChResp chan *Response
@@ -86,9 +95,9 @@ func MakeRegEventCommand(objType obj.ObjectType, id int64, event string) Command
 	return Command{
 		Action: binding.ActRegEvent,
 		Type:   objType,
-		Method: event,
 		ID:     id,
-		Args:   &regEventOpt{},
+		Method: "_regevent",
+		Args:   &regEventOpt{Name: event},
 	}
 }
 
@@ -97,6 +106,7 @@ func MakeTempEventCommand(objType obj.ObjectType, id int64, numRegist int) Comma
 		Action: binding.ActRegEvent,
 		Type:   objType,
 		ID:     id,
+		Method: "_regevent",
 		Args:   &regEventOpt{Temporary: true, Number: numRegist},
 	}
 }
@@ -105,6 +115,7 @@ func MakeUnregEventCommand(objType obj.ObjectType, id int64, eventID int64) Comm
 	return Command{
 		Action: binding.ActRegEvent,
 		Type:   objType,
+		Method: "_regevent",
 		ID:     id,
 		Args:   &regEventOpt{Delete: true, Number: int(eventID)},
 	}
@@ -178,8 +189,8 @@ func messageReceived(id int64, msg string, needReply bool) string {
 			log.Fatalf("invalid response: %#v\n", resp)
 		}
 	case binding.ActEvent:
-		if o := object.GetObject(id); o == nil {
-			log.Fatalf("object not found: %d", id)
+		if o := object.GetObject(resp.Type, resp.ID); o == nil {
+			log.Fatalf("object not found: %d/%d", resp.Type, resp.ID)
 		} else {
 			if !needReply {
 				go func() {

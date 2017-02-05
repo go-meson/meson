@@ -25,7 +25,7 @@ type Window struct {
 
 func newWindow(id int64) *Window {
 	win := &Window{Object: object.NewObject(id, binding.ObjWindow)}
-	object.AddObject(id, win)
+	object.AddObject(binding.ObjWindow, id, win)
 	// register default handler
 	return win
 }
@@ -69,12 +69,12 @@ func NewBrowserWindow(opt *WindowOptions) (*Window, error) {
 		return nil, err
 	}
 
-	var id int64
-	if err := json.Unmarshal(response, &id); err != nil {
+	var cr command.CreateRespResult
+	if err := json.Unmarshal(response, &cr); err != nil {
 		return nil, err
 	}
 
-	return newWindow(id), nil
+	return newWindow(cr.ID), nil
 }
 
 //LoadURLOptions is optional parameter for Window.LoadURL and WebContents.LoadURL

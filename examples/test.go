@@ -57,7 +57,7 @@ type winUserData struct {
 	doClosing bool
 }
 
-func main() {
+func setupLogger() {
 	u, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -69,6 +69,10 @@ func main() {
 	}
 	logger.RedirectStdout()
 	logger.RedirectStderr()
+}
+
+func main() {
+	setupLogger()
 	log.Printf("bundlePath = %s\n", util.ApplicationBundlePath)
 	meson.MainLoop(os.Args, func(a *app.App) {
 		m, err := menu.NewWithTemplate(mainMenu)
@@ -97,6 +101,7 @@ func main() {
 		win.OpenDevTool()
 
 		win.OnWindowClose(func(sender object.ObjectRef) bool {
+			log.Printf("**** OnWindowClose: %#v\n", sender)
 			ud := win.UserData.(*winUserData)
 			if ud.doClosing {
 				return false

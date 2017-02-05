@@ -194,7 +194,7 @@ func (p menuItemClickItem) Call(o obj.ObjectRef, arg json.RawMessage) (bool, err
 	if err := json.Unmarshal(arg, &args); err != nil {
 		return false, err
 	}
-	win := object.GetObject(args.FocusID).(*window.Window)
+	win := object.GetObject(binding.ObjWindow, args.FocusID).(*window.Window)
 	p.mi.Click(p.mi, win)
 	return false, nil
 }
@@ -248,7 +248,7 @@ type Menu struct {
 
 func newMenu(id int64) *Menu {
 	menu := &Menu{Object: object.NewObject(id, binding.ObjMenu)}
-	object.AddObject(id, menu)
+	object.AddObject(binding.ObjMenu, id, menu)
 	return menu
 }
 
@@ -262,13 +262,13 @@ func NewWithTemplate(template Template) (*Menu, error) {
 	if err != nil {
 		return nil, err
 	}
-	var id int64
-	err = json.Unmarshal(resp, &id)
+	var cr command.CreateRespResult
+	err = json.Unmarshal(resp, &cr)
 	if err != nil {
 		return nil, err
 	}
 
-	menu := newMenu(id)
+	menu := newMenu(cr.ID)
 	if err := menu.LoadTemplate(template); err != nil {
 		//TODO: destory object...
 		return nil, err
@@ -333,7 +333,7 @@ func SetApplicationMenu(menu *Menu) error {
 		//TODO: linux/windowsでの動作確認
 		return errors.New("Current platform is not supported this method currently.")
 	}
-	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjAppID, "setApplicationMenu", menu)
+	cmd := command.MakeCallCommand(binding.ObjMenu, binding.ObjStaticID, "setApplicationMenu", menu)
 	_, err := command.SendMessage(&cmd)
 	return err
 }

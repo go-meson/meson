@@ -6,6 +6,7 @@ import (
 	"fmt"
 	obj "github.com/go-meson/meson/object"
 	"log"
+	"sync"
 )
 
 type CallbackInterface interface {
@@ -27,7 +28,8 @@ type ObjectRefInternal interface {
 }
 
 var (
-	objects = make(map[int64]ObjectRefInternal)
+	lock    = sync.RWMutex{}
+	objects = make(map[obj.ObjectType]map[int64]ObjectRefInternal)
 )
 
 func NewObject(id int64, objType obj.ObjectType) Object {
@@ -38,19 +40,31 @@ func NewObject(id int64, objType obj.ObjectType) Object {
 	}
 }
 
-func AddObject(id int64, o ObjectRefInternal) {
+func AddObject(t obj.ObjectType, id int64, o ObjectRefInternal) {
 	//TODO: need lock?
-	if old, ok := objects[id]; ok {
+	lock.Lock()
+	defer lock.Unlock()
+	tm, ok := objects[t]
+	if !ok {
+		tm = make(map[int64]ObjectRefInternal)
+		objects[t] = tm
+	}
+	if old, ok := tm[id]; ok {
 		panic(fmt.Errorf("object is already exists!(%#v)", old))
 	}
-	objects[id] = o
+	tm[id] = o
 }
 
-func GetObject(id int64) ObjectRefInternal {
-	if o, ok := objects[id]; ok {
-		return o
+func GetObject(t obj.ObjectType, id int64) ObjectRefInternal {
+	var r ObjectRefInternal
+	lock.RLock()
+	if tm, ok := objects[t]; ok {
+		if o, ok := tm[id]; ok {
+			r = o
+		}
 	}
-	return nil
+	lock.RUnlock()
+	return r
 }
 
 func (o *Object) GetID() int64 {
@@ -84,24 +98,37 @@ func (o *Object) Destroy() {
 
 func (o *Object) Destroyed() {
 	log.Printf("destroyed: %d", o.Id)
-	delete(objects, o.Id)
+	lock.Lock()
+	defer lock.Unlock()
+	if tm, ok := objects[o.ObjType]; ok {
+		delete(tm, o.Id)
+		if len(tm) == 0 {
+			delete(objects, o.ObjType)
+		}
+	}
+}
+
+type objForJSON struct {
+	Type obj.ObjectType `json:"type"`
+	ID   int64          `json:"id"`
 }
 
 func (o *Object) MarshalJSON() ([]byte, error) {
-	var id int64
+	oj := objForJSON{}
 	if o != nil {
-		id = o.Id
+		oj.Type = o.ObjType
+		oj.ID = o.Id
 	}
-	return json.Marshal(&id)
+	return json.Marshal(&oj)
 }
 
 func (o *Object) UnmashalJSON(data []byte) error {
-	var id int64
-	err := json.Unmarshal(data, &id)
+	var oj objForJSON
+	err := json.Unmarshal(data, &oj)
 	if err != nil {
 		return err
 	}
-	obj := GetObject(id)
+	obj := GetObject(oj.Type, oj.ID)
 	if obj == nil {
 		return errors.New("invalid object id")
 	}

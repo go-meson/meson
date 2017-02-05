@@ -62,7 +62,8 @@ func ShowMessageBox(window *window.Window, message string, title string, message
 	if window != nil {
 		winid = window.Id
 	}
-	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjAppID, "showMessageBox", winid, &tmpl)
+	//TODO: dialog static method
+	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjStaticID, "showMessageBox", winid, &tmpl)
 	r, err := command.SendMessage(&cmd)
 	if err != nil {
 		return -1, err
@@ -109,7 +110,7 @@ func ShowMessageBoxAsync(window *window.Window, message string, title string, me
 		winid = window.Id
 	}
 
-	app := obj.GetObject(binding.ObjAppID).(*app.App)
+	app := obj.GetObject(binding.ObjApp, binding.ObjStaticID).(*app.App)
 	event.MakeTempEventAsync(&app.Object, 1, func(items []event.TempEventItem, err error) {
 		if err != nil {
 			handler(-1, err)

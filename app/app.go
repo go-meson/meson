@@ -19,7 +19,7 @@ type App struct {
 
 // Exit exit meson application with exit code.
 func Exit(code int) {
-	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjAppID, "exit", code)
+	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjStaticID, "exit", code)
 	if err := command.PostMessage(&cmd); err != nil {
 		panic(err)
 	}
