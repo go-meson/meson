@@ -3,7 +3,6 @@ package dialog
 import (
 	"encoding/json"
 	"errors"
-	"github.com/go-meson/meson/app"
 	"github.com/go-meson/meson/internal/binding"
 	"github.com/go-meson/meson/internal/command"
 	"github.com/go-meson/meson/internal/event"
@@ -40,6 +39,14 @@ const (
 	MessageBoxTypeQuestion                = MessageBoxType(binding.MessageBoxTypeQuestion) // with icon for question message.
 )
 
+var (
+	dlgCls = func() *obj.Object {
+		dlg := obj.NewObject(binding.ObjStaticID, binding.ObjDialog)
+		obj.AddObject(binding.ObjDialog, binding.ObjStaticID, &dlg)
+		return &dlg
+	}()
+)
+
 func makeMsgBoxOpt(message string, title string, messageBoxType MessageBoxType, opt *MessageBoxOpt) msgBoxOpt {
 	tmpl := msgBoxOpt{Type: messageBoxType, Title: title, Message: message}
 	if opt != nil {
@@ -63,7 +70,7 @@ func ShowMessageBox(window *window.Window, message string, title string, message
 		winid = window.Id
 	}
 	//TODO: dialog static method
-	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjStaticID, "showMessageBox", winid, &tmpl)
+	cmd := command.MakeCallCommand(binding.ObjDialog, binding.ObjStaticID, "showMessageBox", winid, &tmpl)
 	r, err := command.SendMessage(&cmd)
 	if err != nil {
 		return -1, err
@@ -94,9 +101,9 @@ func (mb msgBoxCallbackItem) Call(o object.ObjectRef, arg json.RawMessage) (bool
 	} else {
 		mb.f(args.ButtonID, nil)
 	}
-	app := o.(*app.App)
+	obj := o.(*obj.Object)
 	log.Printf("eventID = %d, eventNo = %d\n", mb.eventID, mb.eventNo)
-	event.DeleteRegisterdCallback(&app.Object, mb.eventID, mb.eventNo)
+	event.DeleteRegisterdCallback(obj, mb.eventID, mb.eventNo)
 	return false, nil
 }
 
@@ -110,8 +117,7 @@ func ShowMessageBoxAsync(window *window.Window, message string, title string, me
 		winid = window.Id
 	}
 
-	app := obj.GetObject(binding.ObjApp, binding.ObjStaticID).(*app.App)
-	event.MakeTempEventAsync(&app.Object, 1, func(items []event.TempEventItem, err error) {
+	event.MakeTempEventAsync(dlgCls, 1, func(items []event.TempEventItem, err error) {
 		if err != nil {
 			handler(-1, err)
 			return
@@ -119,13 +125,13 @@ func ShowMessageBoxAsync(window *window.Window, message string, title string, me
 		eventID := items[0].EventID
 		eventName := items[0].EventName
 		item := &msgBoxCallbackItem{f: handler, eventID: eventID}
-		eventNo := app.AddRegisterdCallback(eventID, item)
+		eventNo := dlgCls.AddRegisterdCallback(eventID, item)
 		item.eventNo = eventNo
-		cmd := command.MakeCallCommand(app.ObjType, app.Id, "showMessageBox", winid, &tmpl, eventName)
+		cmd := command.MakeCallCommand(dlgCls.ObjType, dlgCls.Id, "showMessageBox", winid, &tmpl, eventName)
 		if err := command.SendMessageAsync(&cmd, func(r *command.Response) {
 			if err := command.CheckResponse(r); err != nil {
 				handler(-1, err)
-				event.DeleteRegisterdCallback(&app.Object, eventID, eventNo)
+				event.DeleteRegisterdCallback(dlgCls, eventID, eventNo)
 				return
 			}
 		}); err != nil {
@@ -133,7 +139,7 @@ func ShowMessageBoxAsync(window *window.Window, message string, title string, me
 		}
 	})
 
-	cmd := command.MakeTempEventCommand(app.ObjType, app.Id, 1)
+	cmd := command.MakeTempEventCommand(dlgCls.ObjType, dlgCls.Id, 1)
 	if err := command.SendMessageAsync(&cmd, func(r *command.Response) {
 		if err := command.CheckResponse(r); err != nil {
 			handler(-1, err)

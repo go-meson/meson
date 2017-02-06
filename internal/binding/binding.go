@@ -42,6 +42,7 @@ const (
 	ObjSession                       = C.MESON_OBJECT_TYPE_SESSION
 	ObjWebContents                   = C.MESON_OBJECT_TYPE_WEB_CONTENTS
 	ObjMenu                          = C.MESON_OBJECT_TYPE_MENU
+	ObjDialog                        = C.MESON_OBJECT_TYPE_DIALOG
 )
 
 type MenuType int
