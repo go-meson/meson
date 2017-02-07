@@ -1,6 +1,7 @@
 package window
 
 import (
+	"encoding/json"
 	"errors"
 	evt "github.com/go-meson/meson/event"
 	"github.com/go-meson/meson/internal/binding"
@@ -8,7 +9,6 @@ import (
 	"github.com/go-meson/meson/internal/event"
 	"github.com/go-meson/meson/internal/object"
 	"github.com/go-meson/meson/util"
-	"github.com/koron/go-dproxy"
 )
 
 // Rect represents a rectangular region on the screen
@@ -25,7 +25,7 @@ type Window struct {
 
 func newWindow(id int64) *Window {
 	win := &Window{Object: object.NewObject(id, binding.ObjWindow)}
-	object.AddObject(id, win)
+	object.AddObject(binding.ObjWindow, id, win)
 	// register default handler
 	return win
 }
@@ -69,12 +69,12 @@ func NewBrowserWindow(opt *WindowOptions) (*Window, error) {
 		return nil, err
 	}
 
-	id, err := dproxy.New(response).Int64()
-	if err != nil {
+	var cr command.CreateRespResult
+	if err := json.Unmarshal(response, &cr); err != nil {
 		return nil, err
 	}
 
-	return newWindow(id), nil
+	return newWindow(cr.ID), nil
 }
 
 //LoadURLOptions is optional parameter for Window.LoadURL and WebContents.LoadURL
@@ -102,7 +102,7 @@ func (w *Window) Close() {
 
 func (w *Window) OpenDevTool() {
 	// TODO: options??
-	cmd := command.MakeCallCommand(w.ObjType, w.Id, "OpenDevTools")
+	cmd := command.MakeCallCommand(w.ObjType, w.Id, "openDevTools")
 	if err := command.PostMessage(&cmd); err != nil {
 		panic(err)
 	}
@@ -119,7 +119,10 @@ func (w *Window) IsDevToolOpened() bool {
 	if err != nil {
 		return false
 	}
-	b, _ := dproxy.New(r).Bool()
+	var b bool
+	if err := json.Unmarshal(r, &b); err != nil {
+		return false
+	}
 	return b
 }
 

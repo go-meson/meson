@@ -1,6 +1,8 @@
 package menu
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-meson/meson/internal/binding"
@@ -8,10 +10,11 @@ import (
 	"github.com/go-meson/meson/internal/event"
 	"github.com/go-meson/meson/internal/object"
 	obj "github.com/go-meson/meson/object"
+	"github.com/go-meson/meson/util"
 	"github.com/go-meson/meson/window"
-	"github.com/koron/go-dproxy"
 	"log"
 	"runtime"
+	"text/template"
 )
 
 type Role struct {
@@ -24,9 +27,9 @@ type Role struct {
 
 // platform dependents
 const (
-	LabelAbout = "About {{AppName}}"
+	LabelAbout = "About {{.AppName}}"
 	LabelClose = "Close Window"
-	LabelQuit  = "Quit {{AppName}}"
+	LabelQuit  = "Quit {{.AppName}}"
 
 	AcceleratorQuit             = "CommandOrControl+Q"
 	AcceleratorRedo             = "Shift+CommandOrControl+Z"
@@ -63,7 +66,7 @@ const (
 // platform dependents
 var menuRolePlatform = map[RoleType]Role{
 	RoleAbout:         Role{Label: LabelAbout},
-	RoleHide:          Role{Label: "Hide {{AppName}}", Accelerator: "Command+H"},
+	RoleHide:          Role{Label: "Hide {{.AppName}}", Accelerator: "Command+H"},
 	RoleHideOthers:    Role{Label: "Hide Others", Accelerator: "Command+Alt+H"},
 	RoleUnHide:        Role{Label: "Show All"},
 	RoleStartSpeaking: Role{Label: "Start Speaking"},
@@ -180,22 +183,31 @@ func (mi *ItemTemplate) applyRole() error {
 	return nil
 }
 
+func (mi *ItemTemplate) applyTemplate() {
+	templ, err := template.New("label").Parse(mi.Label)
+	if err == nil {
+		b := new(bytes.Buffer)
+		if err := templ.Execute(b, map[string]string{"AppName": util.ApplicationName}); err == nil {
+			mi.Label = b.String()
+		}
+	}
+}
+
 type Template []ItemTemplate
 
 type menuItemClickItem struct {
 	mi *ItemTemplate
 }
 
-func (p menuItemClickItem) Call(o obj.ObjectRef, arg interface{}) (bool, error) {
-	args, ok := arg.([]interface{})
-	if !ok || len(args) != 1 {
-		log.Panicf("Invalid arg type: %#v", arg)
-	}
-	id, err := dproxy.New(args[0]).Int64()
-	if err != nil {
+func (p menuItemClickItem) Call(o obj.ObjectRef, arg json.RawMessage) (bool, error) {
+	log.Printf("menuItemClickItem::Call : %#v\n", arg)
+	args := struct {
+		FocusID int64 `json:"focusID"`
+	}{}
+	if err := json.Unmarshal(arg, &args); err != nil {
 		return false, err
 	}
-	win := object.GetObject(id).(*window.Window)
+	win := object.GetObject(binding.ObjWindow, args.FocusID).(*window.Window)
 	p.mi.Click(p.mi, win)
 	return false, nil
 }
@@ -249,7 +261,7 @@ type Menu struct {
 
 func newMenu(id int64) *Menu {
 	menu := &Menu{Object: object.NewObject(id, binding.ObjMenu)}
-	object.AddObject(id, menu)
+	object.AddObject(binding.ObjMenu, id, menu)
 	return menu
 }
 
@@ -263,12 +275,13 @@ func NewWithTemplate(template Template) (*Menu, error) {
 	if err != nil {
 		return nil, err
 	}
-	id, err := dproxy.New(resp).Int64()
+	var cr command.CreateRespResult
+	err = json.Unmarshal(resp, &cr)
 	if err != nil {
 		return nil, err
 	}
 
-	menu := newMenu(id)
+	menu := newMenu(cr.ID)
 	if err := menu.LoadTemplate(template); err != nil {
 		//TODO: destory object...
 		return nil, err
@@ -289,6 +302,7 @@ func (m *Menu) LoadTemplate(template Template) error {
 		mi := &template[idx]
 		mi.fixMenuType()
 		mi.applyRole()
+		mi.applyTemplate()
 		if mi.Click != nil {
 			ids = append(ids, mi.ID)
 		}
@@ -309,8 +323,8 @@ func (m *Menu) LoadTemplate(template Template) error {
 	for idx := 0; idx < len(ids); idx++ {
 		id := ids[idx]
 		mi := idMap[id]
-		eventID := tempEvents[idx].Id
-		eventName := tempEvents[idx].Name
+		eventID := tempEvents[idx].EventID
+		eventName := tempEvents[idx].EventName
 		mi.eventName = eventName
 		m.AddRegisterdCallback(eventID, menuItemClickItem{mi: mi})
 	}
@@ -333,7 +347,7 @@ func SetApplicationMenu(menu *Menu) error {
 		//TODO: linux/windowsでの動作確認
 		return errors.New("Current platform is not supported this method currently.")
 	}
-	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjAppID, "setApplicationMenu", menu)
+	cmd := command.MakeCallCommand(binding.ObjMenu, binding.ObjStaticID, "setApplicationMenu", menu)
 	_, err := command.SendMessage(&cmd)
 	return err
 }

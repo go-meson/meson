@@ -14,12 +14,22 @@ type App struct {
 	object.Object
 }
 
+var (
+	app = newApp()
+)
+
+func newApp() *App {
+	app := &App{Object: object.NewObject(binding.ObjStaticID, binding.ObjApp)}
+	object.AddObject(binding.ObjApp, binding.ObjStaticID, app)
+	return app
+}
+
 //------------------------------------------------------------------------
 // Methods
 
 // Exit exit meson application with exit code.
 func Exit(code int) {
-	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjAppID, "exit", code)
+	cmd := command.MakeCallCommand(binding.ObjApp, binding.ObjStaticID, "exit", code)
 	if err := command.PostMessage(&cmd); err != nil {
 		panic(err)
 	}
@@ -31,7 +41,7 @@ func Exit(code int) {
 // OnWindowCloseAll set 'window-all-closed' event handler.
 //
 // 'window-all-closed' emitted when all windows have been closed.
-func (app *App) OnWindowCloseAll(callback event.CommonCallbackHandler) error {
+func OnWindowCloseAll(callback event.CommonCallbackHandler) error {
 	const en = "window-all-closed"
 	return evt.AddCallback(&app.Object, en, evt.CommonCallbackItem{F: callback})
 }

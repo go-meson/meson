@@ -32,15 +32,17 @@ const (
 )
 
 const (
-	ObjAppID int64 = C.MESON_OBJID_APP
+	ObjStaticID int64 = C.MESON_OBJID_STATIC
 )
 
 const (
-	ObjApp         object.ObjectType = C.MESON_OBJECT_TYPE_APP
+	ObjNull        object.ObjectType = C.MESON_OBJECT_TYPE_NULL
+	ObjApp                           = C.MESON_OBJECT_TYPE_APP
 	ObjWindow                        = C.MESON_OBJECT_TYPE_WINDOW
 	ObjSession                       = C.MESON_OBJECT_TYPE_SESSION
 	ObjWebContents                   = C.MESON_OBJECT_TYPE_WEB_CONTENTS
 	ObjMenu                          = C.MESON_OBJECT_TYPE_MENU
+	ObjDialog                        = C.MESON_OBJECT_TYPE_DIALOG
 )
 
 type MenuType int
