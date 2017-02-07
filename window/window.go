@@ -102,7 +102,7 @@ func (w *Window) Close() {
 
 func (w *Window) OpenDevTool() {
 	// TODO: options??
-	cmd := command.MakeCallCommand(w.ObjType, w.Id, "OpenDevTools")
+	cmd := command.MakeCallCommand(w.ObjType, w.Id, "openDevTools")
 	if err := command.PostMessage(&cmd); err != nil {
 		panic(err)
 	}

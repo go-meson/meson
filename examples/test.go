@@ -24,7 +24,6 @@ func onClick(mi *menu.ItemTemplate, w *window.Window) {
 }
 
 func onOpenDevTool(mi *menu.ItemTemplate, w *window.Window) {
-	log.Printf("opendev: %#v, %#v", mi, w)
 	if w.IsDevToolOpened() {
 		w.CloseDevTool()
 	} else {
@@ -50,7 +49,7 @@ var mainMenu = menu.Template{
 		{Label: "Test1-2", Click: onClickDialogTest},
 		{Role: "quit"}}},
 	{Label: "Test22222", SubMenu: menu.Template{
-		{Label: "openDevTool", Click: onOpenDevTool},
+		{Label: "toggleDevTool", Click: onOpenDevTool},
 		{Label: "Test2-2"}}},
 }
 
@@ -99,7 +98,6 @@ func main() {
 			return
 		}
 		win.UserData = &winUserData{}
-		win.OpenDevTool()
 
 		win.OnWindowClose(func(sender object.ObjectRef) bool {
 			log.Printf("**** OnWindowClose: %#v\n", sender)
