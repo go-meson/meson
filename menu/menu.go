@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,9 +10,11 @@ import (
 	"github.com/go-meson/meson/internal/event"
 	"github.com/go-meson/meson/internal/object"
 	obj "github.com/go-meson/meson/object"
+	"github.com/go-meson/meson/util"
 	"github.com/go-meson/meson/window"
 	"log"
 	"runtime"
+	"text/template"
 )
 
 type Role struct {
@@ -24,9 +27,9 @@ type Role struct {
 
 // platform dependents
 const (
-	LabelAbout = "About {{AppName}}"
+	LabelAbout = "About {{.AppName}}"
 	LabelClose = "Close Window"
-	LabelQuit  = "Quit {{AppName}}"
+	LabelQuit  = "Quit {{.AppName}}"
 
 	AcceleratorQuit             = "CommandOrControl+Q"
 	AcceleratorRedo             = "Shift+CommandOrControl+Z"
@@ -63,7 +66,7 @@ const (
 // platform dependents
 var menuRolePlatform = map[RoleType]Role{
 	RoleAbout:         Role{Label: LabelAbout},
-	RoleHide:          Role{Label: "Hide {{AppName}}", Accelerator: "Command+H"},
+	RoleHide:          Role{Label: "Hide {{.AppName}}", Accelerator: "Command+H"},
 	RoleHideOthers:    Role{Label: "Hide Others", Accelerator: "Command+Alt+H"},
 	RoleUnHide:        Role{Label: "Show All"},
 	RoleStartSpeaking: Role{Label: "Start Speaking"},
@@ -180,6 +183,16 @@ func (mi *ItemTemplate) applyRole() error {
 	return nil
 }
 
+func (mi *ItemTemplate) applyTemplate() {
+	templ, err := template.New("label").Parse(mi.Label)
+	if err == nil {
+		b := new(bytes.Buffer)
+		if err := templ.Execute(b, map[string]string{"AppName": util.ApplicationName}); err == nil {
+			mi.Label = b.String()
+		}
+	}
+}
+
 type Template []ItemTemplate
 
 type menuItemClickItem struct {
@@ -289,6 +302,7 @@ func (m *Menu) LoadTemplate(template Template) error {
 		mi := &template[idx]
 		mi.fixMenuType()
 		mi.applyRole()
+		mi.applyTemplate()
 		if mi.Click != nil {
 			ids = append(ids, mi.ID)
 		}

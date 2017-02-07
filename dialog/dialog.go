@@ -80,7 +80,7 @@ func ShowMessageBox(window *window.Window, message string, title string, message
 	if err != nil {
 		return -1, err
 	}
-	return int(buttonID), nil
+	return buttonID, nil
 }
 
 type msgBoxCallbackHandler func(int, error)

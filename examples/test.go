@@ -45,9 +45,10 @@ func onClickDialogTest(mi *menu.ItemTemplate, w *window.Window) {
 
 var mainMenu = menu.Template{
 	{Label: "Test1111111", SubMenu: menu.Template{
+		{Role: menu.RoleAbout},
 		{Label: "Test1-1", Click: onClick},
 		{Label: "Test1-2", Click: onClickDialogTest},
-		{Label: "Quit", Role: "quit"}}},
+		{Role: "quit"}}},
 	{Label: "Test22222", SubMenu: menu.Template{
 		{Label: "openDevTool", Click: onOpenDevTool},
 		{Label: "Test2-2"}}},
@@ -72,9 +73,9 @@ func setupLogger() {
 }
 
 func main() {
-	setupLogger()
+	//setupLogger()
 	log.Printf("bundlePath = %s\n", util.ApplicationBundlePath)
-	meson.MainLoop(os.Args, func(a *app.App) {
+	meson.MainLoop(os.Args, func() {
 		m, err := menu.NewWithTemplate(mainMenu)
 		if err != nil {
 			log.Fatal(err)
@@ -82,7 +83,7 @@ func main() {
 		}
 		menu.SetApplicationMenu(m)
 
-		a.OnWindowCloseAll(func(sender object.ObjectRef) {
+		app.OnWindowCloseAll(func(sender object.ObjectRef) {
 			log.Println("**** WindowCloseAll ***")
 			if a := sender.(*app.App); a != nil {
 				app.Exit(0)

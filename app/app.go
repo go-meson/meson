@@ -14,6 +14,16 @@ type App struct {
 	object.Object
 }
 
+var (
+	app = newApp()
+)
+
+func newApp() *App {
+	app := &App{Object: object.NewObject(binding.ObjStaticID, binding.ObjApp)}
+	object.AddObject(binding.ObjApp, binding.ObjStaticID, app)
+	return app
+}
+
 //------------------------------------------------------------------------
 // Methods
 
@@ -31,7 +41,7 @@ func Exit(code int) {
 // OnWindowCloseAll set 'window-all-closed' event handler.
 //
 // 'window-all-closed' emitted when all windows have been closed.
-func (app *App) OnWindowCloseAll(callback event.CommonCallbackHandler) error {
+func OnWindowCloseAll(callback event.CommonCallbackHandler) error {
 	const en = "window-all-closed"
 	return evt.AddCallback(&app.Object, en, evt.CommonCallbackItem{F: callback})
 }
