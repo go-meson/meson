@@ -163,7 +163,7 @@ func main() {
 	}
 	var frameworkVersion string
 	var err error
-	frameworkVersion, err = detectVersionMarchO(opts.executable)
+	frameworkVersion, err = detectFrameworkVersion(opts.executable)
 	if err != nil {
 		fmt.Println(err)
 		return
